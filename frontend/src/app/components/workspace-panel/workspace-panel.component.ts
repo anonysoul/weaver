@@ -5,7 +5,7 @@ import {
   Component,
   Input,
   OnChanges,
-  SimpleChanges
+  SimpleChanges,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -14,7 +14,7 @@ import {
   GitCommandResponse,
   SessionContextResponse,
   SessionLogResponse,
-  SessionRuntimeService
+  SessionRuntimeService,
 } from '../../services/session-runtime.service';
 
 @Component({
@@ -22,7 +22,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './workspace-panel.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WorkspacePanelComponent implements OnChanges {
   @Input({ required: true }) session: SessionResponse | null = null;
@@ -41,7 +41,7 @@ export class WorkspacePanelComponent implements OnChanges {
 
   constructor(
     private readonly runtimeApi: SessionRuntimeService,
-    private readonly cdr: ChangeDetectorRef
+    private readonly cdr: ChangeDetectorRef,
   ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -91,7 +91,7 @@ export class WorkspacePanelComponent implements OnChanges {
         this.gitError = err?.error?.error || '获取日志失败';
         this.loadingLogs = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -127,11 +127,14 @@ export class WorkspacePanelComponent implements OnChanges {
         this.gitError = err?.error?.error || '导出上下文失败';
         this.loadingContext = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
-  private runGitCommand(payload: { command: 'STATUS' | 'PULL' | 'CHECKOUT'; branch?: string }): void {
+  private runGitCommand(payload: {
+    command: 'STATUS' | 'PULL' | 'CHECKOUT';
+    branch?: string;
+  }): void {
     if (!this.session || this.runningGit) {
       return;
     }
@@ -148,7 +151,7 @@ export class WorkspacePanelComponent implements OnChanges {
         this.gitError = err?.error?.error || 'Git 操作失败';
         this.runningGit = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 }

@@ -11,7 +11,7 @@ import java.nio.file.attribute.BasicFileAttributes
 
 @Component
 class WorkspaceManager(
-    private val workspaceProperties: WorkspaceProperties
+    private val workspaceProperties: WorkspaceProperties,
 ) {
     fun resolvePath(sessionId: Long): Path = Paths.get(workspaceProperties.basePath, sessionId.toString())
 
@@ -28,16 +28,25 @@ class WorkspaceManager(
         if (Files.notExists(workspacePath)) {
             return
         }
-        Files.walkFileTree(workspacePath, object : SimpleFileVisitor<Path>() {
-            override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                Files.deleteIfExists(file)
-                return FileVisitResult.CONTINUE
-            }
+        Files.walkFileTree(
+            workspacePath,
+            object : SimpleFileVisitor<Path>() {
+                override fun visitFile(
+                    file: Path,
+                    attrs: BasicFileAttributes,
+                ): FileVisitResult {
+                    Files.deleteIfExists(file)
+                    return FileVisitResult.CONTINUE
+                }
 
-            override fun postVisitDirectory(dir: Path, exc: java.io.IOException?): FileVisitResult {
-                Files.deleteIfExists(dir)
-                return FileVisitResult.CONTINUE
-            }
-        })
+                override fun postVisitDirectory(
+                    dir: Path,
+                    exc: java.io.IOException?,
+                ): FileVisitResult {
+                    Files.deleteIfExists(dir)
+                    return FileVisitResult.CONTINUE
+                }
+            },
+        )
     }
 }

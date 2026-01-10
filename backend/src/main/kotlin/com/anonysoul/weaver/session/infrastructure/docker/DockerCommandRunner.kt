@@ -10,7 +10,7 @@ class DockerCommandRunner {
     data class Result(
         val exitCode: Int,
         val stdout: String,
-        val stderr: String
+        val stderr: String,
     )
 
     fun run(command: List<String>): Result {
@@ -25,7 +25,7 @@ class DockerCommandRunner {
             logger.warn(
                 "Docker command failed with exit code {}: {}",
                 exitCode,
-                stderr.trim().ifBlank { "no stderr" }
+                stderr.trim().ifBlank { "no stderr" },
             )
         }
         return Result(exitCode, stdout, stderr)

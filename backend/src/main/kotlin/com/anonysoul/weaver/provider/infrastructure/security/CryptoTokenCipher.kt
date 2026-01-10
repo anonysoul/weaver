@@ -18,7 +18,7 @@ import javax.crypto.spec.SecretKeySpec
  */
 @Service
 class CryptoTokenCipher(
-    @Value("\${weaver.crypto.key:}") keyValue: String
+    @Value("\${weaver.crypto.key:}") keyValue: String,
 ) : TokenCipher {
     private val keyBytes: ByteArray
     private val secureRandom = SecureRandom()

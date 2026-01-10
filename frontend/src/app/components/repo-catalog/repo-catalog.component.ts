@@ -8,7 +8,7 @@ import { GitLabRepoResponse, ProviderResponse } from '../../core/openapi';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './repo-catalog.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RepoCatalogComponent {
   @Input({ required: true }) providers!: ProviderResponse[];

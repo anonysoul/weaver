@@ -10,17 +10,18 @@ data class Provider(
     val type: ProviderType,
     val encryptedToken: String,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 ) {
     fun withUpdatedValues(
         name: String,
         baseUrl: String,
         encryptedToken: String,
-        updatedAt: Instant
-    ): Provider = copy(
-        name = name,
-        baseUrl = baseUrl,
-        encryptedToken = encryptedToken,
-        updatedAt = updatedAt
-    )
+        updatedAt: Instant,
+    ): Provider =
+        copy(
+            name = name,
+            baseUrl = baseUrl,
+            encryptedToken = encryptedToken,
+            updatedAt = updatedAt,
+        )
 }

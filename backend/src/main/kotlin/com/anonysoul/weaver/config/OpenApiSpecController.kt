@@ -16,9 +16,9 @@ class OpenApiSpecController {
 
     @GetMapping
     @RequestMapping("/api-spec/openapi.yaml")
-    fun openapi(): ResponseEntity<String> {
-        return ResponseEntity.ok()
+    fun openapi(): ResponseEntity<String> =
+        ResponseEntity
+            .ok()
             .contentType(MediaType("application", "yaml"))
             .body(specification)
-    }
 }

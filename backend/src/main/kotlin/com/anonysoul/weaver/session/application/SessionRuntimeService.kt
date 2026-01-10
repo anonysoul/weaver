@@ -25,13 +25,17 @@ class SessionRuntimeService(
     private val sessionLogRepository: SessionLogRepository,
     private val providerRepository: ProviderRepository,
     private val tokenCipher: TokenCipher,
-    private val sessionContainerManager: SessionContainerManager
+    private val sessionContainerManager: SessionContainerManager,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     private val branchPattern = Regex("^[A-Za-z0-9._/-]+$")
 
-    fun listLogs(sessionId: Long, offset: Int, limit: Int): List<SessionLogResponse> {
+    fun listLogs(
+        sessionId: Long,
+        offset: Int,
+        limit: Int,
+    ): List<SessionLogResponse> {
         ensureSessionExists(sessionId)
         val safeOffset = offset.coerceAtLeast(0)
         val safeLimit = limit.coerceIn(1, 1000)
@@ -42,7 +46,7 @@ class SessionRuntimeService(
                 offset,
                 limit,
                 safeOffset,
-                safeLimit
+                safeLimit,
             )
         }
         logger.info("Listing logs for sessionId={} offset={} limit={}", sessionId, safeOffset, safeLimit)
@@ -50,43 +54,48 @@ class SessionRuntimeService(
             SessionLogResponse(
                 id = log.id ?: 0L,
                 message = log.message,
-                createdAt = OffsetDateTime.ofInstant(log.createdAt, ZoneOffset.UTC)
+                createdAt = OffsetDateTime.ofInstant(log.createdAt, ZoneOffset.UTC),
             )
         }
     }
 
-    fun runGitCommand(sessionId: Long, request: GitCommandRequest): GitCommandResponse {
+    fun runGitCommand(
+        sessionId: Long,
+        request: GitCommandRequest,
+    ): GitCommandResponse {
         val session = sessionRepository.findById(sessionId) ?: throw EntityNotFoundException("Session not found")
         ensureSessionReady(sessionId, session.status)
         val containerName = sessionContainerManager.containerName(sessionId)
         val repoName = session.repoName
         logger.info("Running git command {} for sessionId={}", request.command, sessionId)
-        val result = when (request.command) {
-            GitCommandType.STATUS -> sessionContainerManager.gitStatus(containerName, repoName)
-            GitCommandType.CHECKOUT -> {
-                val branch = request.branch?.trim().orEmpty()
-                if (branch.isEmpty()) {
-                    throw IllegalArgumentException("Branch is required for checkout")
+        val result =
+            when (request.command) {
+                GitCommandType.STATUS -> sessionContainerManager.gitStatus(containerName, repoName)
+                GitCommandType.CHECKOUT -> {
+                    val branch = request.branch?.trim().orEmpty()
+                    if (branch.isEmpty()) {
+                        throw IllegalArgumentException("Branch is required for checkout")
+                    }
+                    if (!branchPattern.matches(branch)) {
+                        throw IllegalArgumentException("Invalid branch name")
+                    }
+                    sessionContainerManager.gitCheckout(containerName, repoName, branch)
                 }
-                if (!branchPattern.matches(branch)) {
-                    throw IllegalArgumentException("Invalid branch name")
+                GitCommandType.PULL -> {
+                    val provider =
+                        providerRepository.findById(session.providerId)
+                            ?: throw EntityNotFoundException("Provider not found")
+                    val token = tokenCipher.decrypt(provider.encryptedToken)
+                    sessionContainerManager.gitPull(containerName, repoName, token)
                 }
-                sessionContainerManager.gitCheckout(containerName, repoName, branch)
             }
-            GitCommandType.PULL -> {
-                val provider = providerRepository.findById(session.providerId)
-                    ?: throw EntityNotFoundException("Provider not found")
-                val token = tokenCipher.decrypt(provider.encryptedToken)
-                sessionContainerManager.gitPull(containerName, repoName, token)
-            }
-        }
         val ok = result.exitCode == 0
         val stdout = result.stdout.trim()
         val stderr = result.stderr.trim()
         val message = if (ok) "Command completed" else stderr.ifBlank { "Command failed" }
         appendLog(
             sessionId,
-            "Git ${request.command.name}${request.branch?.let { " $it" } ?: ""}: ${if (ok) "ok" else "failed"}."
+            "Git ${request.command.name}${request.branch?.let { " $it" } ?: ""}: ${if (ok) "ok" else "failed"}.",
         )
         if (!ok) {
             logger.warn("Git command {} failed for sessionId={}", request.command, sessionId)
@@ -96,7 +105,7 @@ class SessionRuntimeService(
             command = request.command,
             stdout = stdout,
             stderr = stderr,
-            message = message
+            message = message,
         )
     }
 
@@ -126,14 +135,18 @@ class SessionRuntimeService(
         }
 
         val currentBranch = branchResult.stdout.trim().ifBlank { null }
-        val branches = branchesResult.stdout.lines()
-            .map { it.replace("*", "").trim() }
-            .filter { it.isNotBlank() }
+        val branches =
+            branchesResult.stdout
+                .lines()
+                .map { it.replace("*", "").trim() }
+                .filter { it.isNotBlank() }
         val gitStatus = statusResult.stdout.lines().filter { it.isNotBlank() }
-        val directoryTree = directoryResult.stdout.lines()
-            .map { it.trim() }
-            .filter { it.isNotBlank() && it != "." }
-            .filterNot { it.startsWith("./.git") }
+        val directoryTree =
+            directoryResult.stdout
+                .lines()
+                .map { it.trim() }
+                .filter { it.isNotBlank() && it != "." }
+                .filterNot { it.startsWith("./.git") }
 
         appendLog(sessionId, "Session context exported.")
         return SessionContextResponse(
@@ -147,7 +160,7 @@ class SessionRuntimeService(
             branches = branches,
             gitStatus = gitStatus,
             directoryTree = directoryTree,
-            generatedAt = OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC)
+            generatedAt = OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC),
         )
     }
 
@@ -157,21 +170,27 @@ class SessionRuntimeService(
         }
     }
 
-    private fun ensureSessionReady(sessionId: Long, status: SessionState) {
+    private fun ensureSessionReady(
+        sessionId: Long,
+        status: SessionState,
+    ) {
         if (status != SessionState.READY) {
             appendLog(sessionId, "Session is not ready for runtime operations.")
             throw IllegalArgumentException("Session is not ready")
         }
     }
 
-    private fun appendLog(sessionId: Long, message: String) {
+    private fun appendLog(
+        sessionId: Long,
+        message: String,
+    ) {
         sessionLogRepository.save(
             SessionLog(
                 id = null,
                 sessionId = sessionId,
                 message = message,
-                createdAt = Instant.now()
-            )
+                createdAt = Instant.now(),
+            ),
         )
     }
 }

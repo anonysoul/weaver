@@ -4,7 +4,7 @@ import {
   ChangeDetectorRef,
   Component,
   OnDestroy,
-  ViewEncapsulation
+  ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -16,7 +16,7 @@ import {
   ProviderResponse,
   SessionRequest,
   SessionResponse,
-  SessionsService
+  SessionsService,
 } from './core/openapi';
 import { ProviderPanelComponent } from './components/provider-panel/provider-panel.component';
 import { RepoCatalogComponent } from './components/repo-catalog/repo-catalog.component';
@@ -35,12 +35,12 @@ import { WorkspacePanelComponent } from './components/workspace-panel/workspace-
     SessionPanelComponent,
     SidebarComponent,
     TopbarComponent,
-    WorkspacePanelComponent
+    WorkspacePanelComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.less',
   encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App implements OnDestroy {
   protected providers: ProviderResponse[] = [];
@@ -64,13 +64,13 @@ export class App implements OnDestroy {
   protected form = {
     name: '',
     baseUrl: 'https://gitlab.com',
-    token: ''
+    token: '',
   };
 
   constructor(
     private readonly providerApi: ProvidersService,
     private readonly sessionApi: SessionsService,
-    private readonly cdr: ChangeDetectorRef
+    private readonly cdr: ChangeDetectorRef,
   ) {
     this.refresh();
     this.refreshSessions();
@@ -96,7 +96,7 @@ export class App implements OnDestroy {
         this.status = '加载 GitLab 连接列表失败';
         this.loadingProviders = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -105,7 +105,7 @@ export class App implements OnDestroy {
     this.sessionApi.listSessions().subscribe({
       next: (sessions: SessionResponse[]) => {
         const sorted = [...sessions].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
         this.sessions = sorted;
         if (this.activeSession) {
@@ -121,7 +121,7 @@ export class App implements OnDestroy {
         this.loadingSessions = false;
         this.clearSessionRefreshTimer();
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -131,7 +131,7 @@ export class App implements OnDestroy {
     this.form = {
       name: '',
       baseUrl: 'https://gitlab.com',
-      token: ''
+      token: '',
     };
     this.status = null;
   }
@@ -142,7 +142,7 @@ export class App implements OnDestroy {
     this.form = {
       name: provider.name,
       baseUrl: provider.baseUrl,
-      token: ''
+      token: '',
     };
     this.status = null;
   }
@@ -152,7 +152,7 @@ export class App implements OnDestroy {
     const payload: ProviderRequest = {
       name: formValue.name.trim(),
       baseUrl: formValue.baseUrl.trim(),
-      token: formValue.token.trim()
+      token: formValue.token.trim(),
     };
 
     if (!payload.name || !payload.baseUrl || !payload.token) {
@@ -173,7 +173,7 @@ export class App implements OnDestroy {
           this.form = {
             name: '',
             baseUrl: 'https://gitlab.com',
-            token: ''
+            token: '',
           };
           this.showForm = false;
           this.status = null;
@@ -184,7 +184,7 @@ export class App implements OnDestroy {
         const message = err?.error?.error || '保存失败，请检查 GitLab 连接信息';
         this.status = message;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -198,7 +198,7 @@ export class App implements OnDestroy {
       error: () => {
         this.status = '删除失败，请稍后重试';
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -212,7 +212,7 @@ export class App implements OnDestroy {
         const message = err?.error?.error || '连接测试失败';
         this.status = message;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -222,18 +222,18 @@ export class App implements OnDestroy {
   loadRepos(provider: ProviderResponse): void {
     this.loadingRepos = {
       ...this.loadingRepos,
-      [provider.id]: true
+      [provider.id]: true,
     };
     this.cdr.markForCheck();
     this.providerApi.listProviderRepos(provider.id).subscribe({
       next: (repos: GitLabRepoResponse[]) => {
         this.repos = {
           ...this.repos,
-          [provider.id]: repos
+          [provider.id]: repos,
         };
         this.loadingRepos = {
           ...this.loadingRepos,
-          [provider.id]: false
+          [provider.id]: false,
         };
         this.cdr.markForCheck();
       },
@@ -242,10 +242,10 @@ export class App implements OnDestroy {
         this.status = message;
         this.loadingRepos = {
           ...this.loadingRepos,
-          [provider.id]: false
+          [provider.id]: false,
         };
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -266,7 +266,7 @@ export class App implements OnDestroy {
         this.status = message;
         this.creatingSession = false;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 
@@ -284,7 +284,7 @@ export class App implements OnDestroy {
         const message = err?.error?.error || '删除 Session 失败';
         this.status = message;
         this.cdr.markForCheck();
-      }
+      },
     });
   }
 

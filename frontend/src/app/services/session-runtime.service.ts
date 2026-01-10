@@ -43,19 +43,17 @@ export class SessionRuntimeService {
 
   constructor(private readonly http: HttpClient) {}
 
-  listLogs(
-    sessionId: number,
-    offset = 0,
-    limit = 1000
-  ): Observable<SessionLogResponse[]> {
-    return this.http.get<SessionLogResponse[]>(
-      `${this.basePath}/sessions/${sessionId}/logs`,
-      { params: { offset, limit } }
-    );
+  listLogs(sessionId: number, offset = 0, limit = 1000): Observable<SessionLogResponse[]> {
+    return this.http.get<SessionLogResponse[]>(`${this.basePath}/sessions/${sessionId}/logs`, {
+      params: { offset, limit },
+    });
   }
 
   runGitCommand(sessionId: number, request: GitCommandRequest): Observable<GitCommandResponse> {
-    return this.http.post<GitCommandResponse>(`${this.basePath}/sessions/${sessionId}/git`, request);
+    return this.http.post<GitCommandResponse>(
+      `${this.basePath}/sessions/${sessionId}/git`,
+      request,
+    );
   }
 
   exportContext(sessionId: number): Observable<SessionContextResponse> {

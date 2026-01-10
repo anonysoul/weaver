@@ -15,21 +15,28 @@ import java.time.Duration
 
 @Service
 class GitLabApiClient(
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
 ) : GitLabClient {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    private val httpClient = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(10))
-        .build()
-
-    override fun testConnection(baseUrl: String, token: String): ConnectionTestResult {
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create("${normalizeBaseUrl(baseUrl)}/api/v4/user"))
-            .timeout(Duration.ofSeconds(10))
-            .header("PRIVATE-TOKEN", token)
-            .GET()
+    private val httpClient =
+        HttpClient
+            .newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
             .build()
+
+    override fun testConnection(
+        baseUrl: String,
+        token: String,
+    ): ConnectionTestResult {
+        val request =
+            HttpRequest
+                .newBuilder()
+                .uri(URI.create("${normalizeBaseUrl(baseUrl)}/api/v4/user"))
+                .timeout(Duration.ofSeconds(10))
+                .header("PRIVATE-TOKEN", token)
+                .GET()
+                .build()
         return try {
             val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() in 200..299) {
@@ -44,33 +51,38 @@ class GitLabApiClient(
         }
     }
 
-    override fun listProjects(baseUrl: String, token: String): List<GitLabProject> {
+    override fun listProjects(
+        baseUrl: String,
+        token: String,
+    ): List<GitLabProject> {
         val projects = mutableListOf<GitLabProject>()
         var page = "1"
         val base = normalizeBaseUrl(baseUrl)
         while (page.isNotBlank()) {
             val uri = URI.create("$base/api/v4/projects?membership=true&simple=true&per_page=100&page=$page")
-            val request = HttpRequest.newBuilder()
-                .uri(uri)
-                .timeout(Duration.ofSeconds(15))
-                .header("PRIVATE-TOKEN", token)
-                .GET()
-                .build()
+            val request =
+                HttpRequest
+                    .newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(15))
+                    .header("PRIVATE-TOKEN", token)
+                    .GET()
+                    .build()
             val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() !in 200..299) {
                 logger.warn("GitLab list projects failed with status {}", response.statusCode())
                 throw IllegalArgumentException("GitLab API error: ${response.statusCode()}")
             }
-            val items: List<GitLabProject> = objectMapper.readValue(
-                response.body(),
-                object : TypeReference<List<GitLabProject>>() {}
-            )
+            val items: List<GitLabProject> =
+                objectMapper.readValue(
+                    response.body(),
+                    object : TypeReference<List<GitLabProject>>() {},
+                )
             projects.addAll(items)
             page = response.headers().firstValue("X-Next-Page").orElse("")
         }
         return projects
     }
 
-    private fun normalizeBaseUrl(baseUrl: String): String =
-        baseUrl.trim().removeSuffix("/")
+    private fun normalizeBaseUrl(baseUrl: String): String = baseUrl.trim().removeSuffix("/")
 }

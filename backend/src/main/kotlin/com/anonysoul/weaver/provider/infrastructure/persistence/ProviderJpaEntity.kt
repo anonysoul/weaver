@@ -16,24 +16,18 @@ import java.time.Instant
 class ProviderJpaEntity(
     @Column(nullable = false)
     var name: String,
-
     @Column(name = "base_url", nullable = false, length = 1024)
     var baseUrl: String,
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var type: ProviderType,
-
     @Column(name = "encrypted_token", nullable = false, length = 4096)
     var encryptedToken: String,
-
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant = Instant.now(),
-
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = Instant.now(),
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null
+    var id: Long? = null,
 )

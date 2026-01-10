@@ -5,18 +5,18 @@ import java.time.OffsetDateTime
 data class SessionLogResponse(
     val id: Long,
     val message: String,
-    val createdAt: OffsetDateTime
+    val createdAt: OffsetDateTime,
 )
 
 enum class GitCommandType {
     STATUS,
     PULL,
-    CHECKOUT
+    CHECKOUT,
 }
 
 data class GitCommandRequest(
     val command: GitCommandType,
-    val branch: String? = null
+    val branch: String? = null,
 )
 
 data class GitCommandResponse(
@@ -24,7 +24,7 @@ data class GitCommandResponse(
     val command: GitCommandType,
     val stdout: String,
     val stderr: String,
-    val message: String
+    val message: String,
 )
 
 data class SessionContextResponse(
@@ -38,5 +38,5 @@ data class SessionContextResponse(
     val branches: List<String>,
     val gitStatus: List<String>,
     val directoryTree: List<String>,
-    val generatedAt: OffsetDateTime
+    val generatedAt: OffsetDateTime,
 )

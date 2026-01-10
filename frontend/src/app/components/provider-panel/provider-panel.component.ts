@@ -15,7 +15,7 @@ export type ProviderForm = {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './provider-panel.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProviderPanelComponent {
   @Input({ required: true }) providers!: ProviderResponse[];

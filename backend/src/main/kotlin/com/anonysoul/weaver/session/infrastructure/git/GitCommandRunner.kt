@@ -2,8 +2,8 @@ package com.anonysoul.weaver.session.infrastructure.git
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import java.nio.file.Path
 import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 import java.util.Base64
 
 @Component
@@ -13,18 +13,23 @@ class GitCommandRunner {
     data class Result(
         val exitCode: Int,
         val stdout: String,
-        val stderr: String
+        val stderr: String,
     )
 
-    fun cloneRepository(repoHttpUrl: String, token: String, targetDir: Path): Result {
-        val command = listOf(
-            "git",
-            "-c",
-            "http.extraHeader=${buildAuthHeader(token)}",
-            "clone",
-            repoHttpUrl,
-            targetDir.toString()
-        )
+    fun cloneRepository(
+        repoHttpUrl: String,
+        token: String,
+        targetDir: Path,
+    ): Result {
+        val command =
+            listOf(
+                "git",
+                "-c",
+                "http.extraHeader=${buildAuthHeader(token)}",
+                "clone",
+                repoHttpUrl,
+                targetDir.toString(),
+            )
         logger.debug("Running git command: {}", sanitizeCommand(command))
         val processBuilder = ProcessBuilder(command)
         processBuilder.environment()["GIT_TERMINAL_PROMPT"] = "0"
@@ -36,7 +41,7 @@ class GitCommandRunner {
             logger.warn(
                 "Git command failed with exit code {}: {}",
                 exitCode,
-                stderr.trim().ifBlank { "no stderr" }
+                stderr.trim().ifBlank { "no stderr" },
             )
         }
         return Result(exitCode, stdout, stderr)

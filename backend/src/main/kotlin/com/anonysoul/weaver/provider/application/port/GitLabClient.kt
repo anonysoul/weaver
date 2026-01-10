@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class ConnectionTestResult(
     val ok: Boolean,
-    val message: String
+    val message: String,
 )
 
 data class GitLabProject(
@@ -17,10 +17,17 @@ data class GitLabProject(
     @JsonProperty("web_url")
     val webUrl: String,
     @JsonProperty("http_url_to_repo")
-    val httpUrlToRepo: String
+    val httpUrlToRepo: String,
 )
 
 interface GitLabClient {
-    fun testConnection(baseUrl: String, token: String): ConnectionTestResult
-    fun listProjects(baseUrl: String, token: String): List<GitLabProject>
+    fun testConnection(
+        baseUrl: String,
+        token: String,
+    ): ConnectionTestResult
+
+    fun listProjects(
+        baseUrl: String,
+        token: String,
+    ): List<GitLabProject>
 }

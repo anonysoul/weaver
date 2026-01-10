@@ -6,5 +6,5 @@ data class SessionLog(
     val id: Long?,
     val sessionId: Long,
     val message: String,
-    val createdAt: Instant
+    val createdAt: Instant,
 )

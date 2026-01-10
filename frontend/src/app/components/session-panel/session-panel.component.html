@@ -5,7 +5,12 @@
       <h3>会话编排与状态追踪</h3>
       <p class="panel-subtitle">让同一仓库下的多会话并行运行、互不干扰。</p>
     </div>
-    <button class="ghost" type="button" (click)="refreshSessions.emit()" [disabled]="loadingSessions">
+    <button
+      class="ghost"
+      type="button"
+      (click)="refreshSessions.emit()"
+      [disabled]="loadingSessions"
+    >
       {{ loadingSessions ? '刷新中' : '刷新会话' }}
     </button>
   </div>

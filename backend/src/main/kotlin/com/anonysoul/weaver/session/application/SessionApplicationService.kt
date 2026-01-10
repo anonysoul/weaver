@@ -1,9 +1,9 @@
 package com.anonysoul.weaver.session.application
 
+import com.anonysoul.weaver.provider.ProviderType
 import com.anonysoul.weaver.provider.SessionRequest
 import com.anonysoul.weaver.provider.SessionResponse
 import com.anonysoul.weaver.provider.SessionStatus
-import com.anonysoul.weaver.provider.ProviderType
 import com.anonysoul.weaver.provider.domain.ProviderRepository
 import com.anonysoul.weaver.session.domain.Session
 import com.anonysoul.weaver.session.domain.SessionLog
@@ -16,10 +16,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
+import java.nio.file.Paths
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import java.nio.file.Paths
 
 @Service
 class SessionApplicationService(
@@ -27,12 +27,11 @@ class SessionApplicationService(
     private val sessionLogRepository: SessionLogRepository,
     private val providerRepository: ProviderRepository,
     private val workspaceProperties: WorkspaceProperties,
-    private val sessionInitializer: SessionInitializer
+    private val sessionInitializer: SessionInitializer,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun list(): List<SessionResponse> =
-        sessionRepository.findAll().map { it.toResponse() }
+    fun list(): List<SessionResponse> = sessionRepository.findAll().map { it.toResponse() }
 
     fun get(id: Long): SessionResponse {
         val session = sessionRepository.findById(id) ?: throw EntityNotFoundException("Session not found")
@@ -42,39 +41,43 @@ class SessionApplicationService(
     @Transactional
     fun create(request: SessionRequest): SessionResponse {
         validateRequest(request)
-        val provider = providerRepository.findById(request.providerId)
-            ?: throw EntityNotFoundException("Provider not found")
+        val provider =
+            providerRepository.findById(request.providerId)
+                ?: throw EntityNotFoundException("Provider not found")
         if (provider.type != ProviderType.GITLAB) {
             throw IllegalArgumentException("Provider type not supported")
         }
 
         logger.info("Creating session for providerId={}, repoId={}", request.providerId, request.repoId)
         val now = Instant.now()
-        val session = Session(
-            id = null,
-            providerId = request.providerId,
-            repoId = request.repoId,
-            repoName = request.repoName.trim(),
-            repoPathWithNamespace = request.repoPathWithNamespace.trim(),
-            repoHttpUrl = request.repoHttpUrl.trim(),
-            defaultBranch = request.defaultBranch?.trim()?.ifBlank { null },
-            status = SessionState.CREATING,
-            workspacePath = "",
-            errorMessage = null,
-            createdAt = now,
-            updatedAt = now
-        )
+        val session =
+            Session(
+                id = null,
+                providerId = request.providerId,
+                repoId = request.repoId,
+                repoName = request.repoName.trim(),
+                repoPathWithNamespace = request.repoPathWithNamespace.trim(),
+                repoHttpUrl = request.repoHttpUrl.trim(),
+                defaultBranch = request.defaultBranch?.trim()?.ifBlank { null },
+                status = SessionState.CREATING,
+                workspacePath = "",
+                errorMessage = null,
+                createdAt = now,
+                updatedAt = now,
+            )
         val saved = sessionRepository.save(session)
         val sessionId = saved.id ?: throw IllegalStateException("Session id missing")
         val workspacePath = Paths.get(workspaceProperties.basePath, session.repoName).toString()
         val updated = sessionRepository.save(saved.withWorkspacePath(workspacePath, Instant.now()))
         appendLog(sessionId, "Session created and queued for initialization.")
         logger.info("Session created with id={}, workspacePath={}", sessionId, workspacePath)
-        TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
-            override fun afterCommit() {
-                sessionInitializer.initializeAsync(sessionId)
-            }
-        })
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCommit() {
+                    sessionInitializer.initializeAsync(sessionId)
+                }
+            },
+        )
         return updated.toResponse()
     }
 
@@ -99,14 +102,17 @@ class SessionApplicationService(
         }
     }
 
-    private fun appendLog(sessionId: Long, message: String) {
+    private fun appendLog(
+        sessionId: Long,
+        message: String,
+    ) {
         sessionLogRepository.save(
             SessionLog(
                 id = null,
                 sessionId = sessionId,
                 message = message,
-                createdAt = Instant.now()
-            )
+                createdAt = Instant.now(),
+            ),
         )
     }
 
@@ -123,6 +129,6 @@ class SessionApplicationService(
             workspacePath = workspacePath,
             errorMessage = errorMessage,
             createdAt = OffsetDateTime.ofInstant(createdAt, ZoneOffset.UTC),
-            updatedAt = OffsetDateTime.ofInstant(updatedAt, ZoneOffset.UTC)
+            updatedAt = OffsetDateTime.ofInstant(updatedAt, ZoneOffset.UTC),
         )
 }

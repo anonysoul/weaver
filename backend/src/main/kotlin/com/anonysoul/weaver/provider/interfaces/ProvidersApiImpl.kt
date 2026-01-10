@@ -12,16 +12,17 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class ProvidersApiImpl(
-    private val providerService: ProviderApplicationService
+    private val providerService: ProviderApplicationService,
 ) : ProvidersApi {
-    override fun listProviders(): ResponseEntity<List<ProviderResponse>> =
-        ResponseEntity.ok(providerService.list())
+    override fun listProviders(): ResponseEntity<List<ProviderResponse>> = ResponseEntity.ok(providerService.list())
 
     override fun createProvider(providerRequest: ProviderRequest): ResponseEntity<ProviderResponse> =
         ResponseEntity.status(HttpStatus.CREATED).body(providerService.create(providerRequest))
 
-    override fun updateProvider(id: Long, providerRequest: ProviderRequest): ResponseEntity<ProviderResponse> =
-        ResponseEntity.ok(providerService.update(id, providerRequest))
+    override fun updateProvider(
+        id: Long,
+        providerRequest: ProviderRequest,
+    ): ResponseEntity<ProviderResponse> = ResponseEntity.ok(providerService.update(id, providerRequest))
 
     override fun deleteProvider(id: Long): ResponseEntity<Unit> {
         providerService.delete(id)
@@ -31,6 +32,5 @@ class ProvidersApiImpl(
     override fun testProviderConnection(id: Long): ResponseEntity<ConnectionTestResponse> =
         ResponseEntity.ok(providerService.testConnection(id))
 
-    override fun listProviderRepos(id: Long): ResponseEntity<List<GitLabRepoResponse>> =
-        ResponseEntity.ok(providerService.listRepos(id))
+    override fun listProviderRepos(id: Long): ResponseEntity<List<GitLabRepoResponse>> = ResponseEntity.ok(providerService.listRepos(id))
 }

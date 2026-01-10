@@ -15,22 +15,28 @@ class ApiExceptionHandler {
     @ExceptionHandler(EntityNotFoundException::class)
     fun handleNotFound(ex: EntityNotFoundException): ResponseEntity<Map<String, String>> {
         logger.warn("Entity not found: {}", ex.message)
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
             .body(mapOf("error" to (ex.message ?: "Not found")))
     }
 
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleBadRequest(ex: IllegalArgumentException): ResponseEntity<Map<String, String>> {
         logger.warn("Bad request: {}", ex.message)
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
             .body(mapOf("error" to (ex.message ?: "Invalid request")))
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidation(ex: MethodArgumentNotValidException): ResponseEntity<Map<String, String>> {
-        val message = ex.bindingResult.fieldErrors.firstOrNull()?.defaultMessage ?: "Validation failed"
+        val message =
+            ex.bindingResult.fieldErrors
+                .firstOrNull()
+                ?.defaultMessage ?: "Validation failed"
         logger.warn("Validation failed: {}", message)
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
             .body(mapOf("error" to message))
     }
 }

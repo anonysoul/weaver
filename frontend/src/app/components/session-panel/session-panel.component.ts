@@ -7,7 +7,7 @@ import {
   ProviderResponse,
   SessionRequest,
   SessionResponse,
-  SessionStatus
+  SessionStatus,
 } from '../../core/openapi';
 
 @Component({
@@ -15,7 +15,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './session-panel.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SessionPanelComponent {
   @Input({ required: true }) providers!: ProviderResponse[];
@@ -61,7 +61,7 @@ export class SessionPanelComponent {
       repoName: repo.name,
       repoPathWithNamespace: repo.pathWithNamespace,
       repoHttpUrl: repo.httpUrlToRepo,
-      defaultBranch: repo.defaultBranch ?? null
+      defaultBranch: repo.defaultBranch ?? null,
     });
   }
 

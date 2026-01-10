@@ -22,7 +22,7 @@ class SessionInitializer(
     private val sessionLogRepository: SessionLogRepository,
     private val providerRepository: ProviderRepository,
     private val tokenCipher: TokenCipher,
-    private val sessionContainerManager: SessionContainerManager
+    private val sessionContainerManager: SessionContainerManager,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -34,8 +34,9 @@ class SessionInitializer(
         appendLog(sessionId, "Session container initialization started.")
         var containerCreated = false
         try {
-            val provider = providerRepository.findById(session.providerId)
-                ?: throw IllegalStateException("Provider not found")
+            val provider =
+                providerRepository.findById(session.providerId)
+                    ?: throw IllegalStateException("Provider not found")
             val token = tokenCipher.decrypt(provider.encryptedToken)
             val containerName = sessionContainerManager.containerName(sessionId)
             appendLog(sessionId, "Creating session container.")
@@ -64,12 +65,13 @@ class SessionInitializer(
             sessionContainerManager.clearWorkspace(containerName, session.repoName)
 
             appendLog(sessionId, "Cloning repository into container workspace.")
-            val result = sessionContainerManager.cloneRepository(
-                containerName,
-                session.repoHttpUrl,
-                token,
-                session.repoName
-            )
+            val result =
+                sessionContainerManager.cloneRepository(
+                    containerName,
+                    session.repoHttpUrl,
+                    token,
+                    session.repoName,
+                )
             if (result.exitCode == 0) {
                 val updated = session.withStatus(SessionState.READY, Instant.now(), null)
                 sessionRepository.save(updated)
@@ -110,18 +112,24 @@ class SessionInitializer(
         }
     }
 
-    private fun appendLog(sessionId: Long, message: String) {
+    private fun appendLog(
+        sessionId: Long,
+        message: String,
+    ) {
         sessionLogRepository.save(
             SessionLog(
                 id = null,
                 sessionId = sessionId,
                 message = message,
-                createdAt = Instant.now()
-            )
+                createdAt = Instant.now(),
+            ),
         )
     }
 
-    private fun sanitizeGitError(message: String, token: String): String {
+    private fun sanitizeGitError(
+        message: String,
+        token: String,
+    ): String {
         if (message.isBlank()) {
             return message
         }

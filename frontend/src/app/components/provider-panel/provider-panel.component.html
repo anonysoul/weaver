@@ -21,15 +21,30 @@
       <form class="stack" (ngSubmit)="save.emit()" *ngIf="showForm; else formHint">
         <label>
           <span>连接名称</span>
-          <input type="text" [(ngModel)]="form.name" name="name" placeholder="例如：GitLab 主账号" />
+          <input
+            type="text"
+            [(ngModel)]="form.name"
+            name="name"
+            placeholder="例如：GitLab 主账号"
+          />
         </label>
         <label>
           <span>GitLab Base URL</span>
-          <input type="text" [(ngModel)]="form.baseUrl" name="baseUrl" placeholder="https://gitlab.com" />
+          <input
+            type="text"
+            [(ngModel)]="form.baseUrl"
+            name="baseUrl"
+            placeholder="https://gitlab.com"
+          />
         </label>
         <label>
           <span>访问令牌</span>
-          <input type="password" [(ngModel)]="form.token" name="token" placeholder="不会回显或保存明文" />
+          <input
+            type="password"
+            [(ngModel)]="form.token"
+            name="token"
+            placeholder="不会回显或保存明文"
+          />
         </label>
         <button class="primary" type="submit">{{ editingId ? '保存修改' : '创建连接' }}</button>
       </form>

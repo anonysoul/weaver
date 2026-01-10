@@ -14,16 +14,25 @@ data class Session(
     val workspacePath: String,
     val errorMessage: String?,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 ) {
-    fun withWorkspacePath(path: String, updatedAt: Instant): Session = copy(
-        workspacePath = path,
-        updatedAt = updatedAt
-    )
+    fun withWorkspacePath(
+        path: String,
+        updatedAt: Instant,
+    ): Session =
+        copy(
+            workspacePath = path,
+            updatedAt = updatedAt,
+        )
 
-    fun withStatus(status: SessionState, updatedAt: Instant, errorMessage: String?): Session = copy(
-        status = status,
-        updatedAt = updatedAt,
-        errorMessage = errorMessage
-    )
+    fun withStatus(
+        status: SessionState,
+        updatedAt: Instant,
+        errorMessage: String?,
+    ): Session =
+        copy(
+            status = status,
+            updatedAt = updatedAt,
+            errorMessage = errorMessage,
+        )
 }

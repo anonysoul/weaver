@@ -8,7 +8,7 @@
       (startCreate)="startCreate()"
     ></app-topbar>
 
-    <section class="mission reveal" id="dashboard" style="--delay: 0.05s;">
+    <section class="mission reveal" id="dashboard" style="--delay: 0.05s">
       <div class="mission-copy">
         <p class="mission-kicker">Weaver Roadmap · Milestone 1-2</p>
         <h2>将 AI 编码会话编排为可控的仓库与工作区流程</h2>
@@ -34,28 +34,28 @@
         </div>
         <div class="console-card console-highlight">
           <p class="console-title">实时状态</p>
-        <div class="console-metrics">
-          <div>
-            <p class="metric-label">Providers</p>
-            <p class="metric-value">{{ providers.length }}</p>
+          <div class="console-metrics">
+            <div>
+              <p class="metric-label">Providers</p>
+              <p class="metric-value">{{ providers.length }}</p>
+            </div>
+            <div>
+              <p class="metric-label">Repo Catalog</p>
+              <p class="metric-value">{{ totalRepoCount }}</p>
+            </div>
+            <div>
+              <p class="metric-label">Active Sessions</p>
+              <p class="metric-value">{{ sessions.length }}</p>
+            </div>
           </div>
-          <div>
-            <p class="metric-label">Repo Catalog</p>
-            <p class="metric-value">{{ totalRepoCount }}</p>
-          </div>
-          <div>
-            <p class="metric-label">Active Sessions</p>
-            <p class="metric-value">{{ sessions.length }}</p>
-          </div>
+          <p class="console-footnote">当前支持 GitLab，后续扩展 GitHub / Azure DevOps。</p>
         </div>
-        <p class="console-footnote">当前支持 GitLab，后续扩展 GitHub / Azure DevOps。</p>
-      </div>
       </div>
     </section>
 
     <p class="global-status" *ngIf="status">{{ status }}</p>
 
-    <section class="section-block reveal" id="providers" style="--delay: 0.1s;">
+    <section class="section-block reveal" id="providers" style="--delay: 0.1s">
       <div class="section-head">
         <div>
           <p class="section-kicker">Milestone 1</p>
@@ -77,7 +77,7 @@
       ></app-provider-panel>
     </section>
 
-    <section class="section-block reveal" id="repositories" style="--delay: 0.15s;">
+    <section class="section-block reveal" id="repositories" style="--delay: 0.15s">
       <div class="section-head">
         <div>
           <p class="section-kicker">Milestone 1</p>
@@ -93,7 +93,7 @@
       ></app-repo-catalog>
     </section>
 
-    <section class="section-block reveal" id="sessions" style="--delay: 0.2s;">
+    <section class="section-block reveal" id="sessions" style="--delay: 0.2s">
       <div class="section-head">
         <div>
           <p class="section-kicker">Milestone 2</p>
@@ -114,7 +114,7 @@
       ></app-session-panel>
     </section>
 
-    <section class="section-block reveal" id="workspaces" style="--delay: 0.25s;">
+    <section class="section-block reveal" id="workspaces" style="--delay: 0.25s">
       <div class="section-head">
         <div>
           <p class="section-kicker">Milestone 2-3</p>
@@ -125,7 +125,7 @@
       <app-workspace-panel [session]="activeSession"></app-workspace-panel>
     </section>
 
-    <section class="section-block reveal" id="milestones" style="--delay: 0.3s;">
+    <section class="section-block reveal" id="milestones" style="--delay: 0.3s">
       <div class="section-head">
         <div>
           <p class="section-kicker">Roadmap</p>

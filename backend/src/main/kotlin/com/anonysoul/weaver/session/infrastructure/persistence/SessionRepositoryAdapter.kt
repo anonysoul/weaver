@@ -6,23 +6,19 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class SessionRepositoryAdapter(
-    private val sessionJpaRepository: SessionJpaRepository
+    private val sessionJpaRepository: SessionJpaRepository,
 ) : SessionRepository {
-    override fun findAll(): List<Session> =
-        sessionJpaRepository.findAll().map { it.toDomain() }
+    override fun findAll(): List<Session> = sessionJpaRepository.findAll().map { it.toDomain() }
 
-    override fun findById(id: Long): Session? =
-        sessionJpaRepository.findById(id).orElse(null)?.toDomain()
+    override fun findById(id: Long): Session? = sessionJpaRepository.findById(id).orElse(null)?.toDomain()
 
-    override fun save(session: Session): Session =
-        sessionJpaRepository.save(session.toJpa()).toDomain()
+    override fun save(session: Session): Session = sessionJpaRepository.save(session.toJpa()).toDomain()
 
     override fun deleteById(id: Long) {
         sessionJpaRepository.deleteById(id)
     }
 
-    override fun existsById(id: Long): Boolean =
-        sessionJpaRepository.existsById(id)
+    override fun existsById(id: Long): Boolean = sessionJpaRepository.existsById(id)
 
     private fun SessionJpaEntity.toDomain(): Session =
         Session(
@@ -37,7 +33,7 @@ class SessionRepositoryAdapter(
             workspacePath = workspacePath,
             errorMessage = errorMessage,
             createdAt = createdAt,
-            updatedAt = updatedAt
+            updatedAt = updatedAt,
         )
 
     private fun Session.toJpa(): SessionJpaEntity =
@@ -53,6 +49,6 @@ class SessionRepositoryAdapter(
             errorMessage = errorMessage,
             createdAt = createdAt,
             updatedAt = updatedAt,
-            id = id
+            id = id,
         )
 }

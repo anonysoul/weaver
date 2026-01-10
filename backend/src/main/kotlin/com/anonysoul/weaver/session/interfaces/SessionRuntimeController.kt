@@ -13,24 +13,23 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/sessions")
 class SessionRuntimeController(
-    private val runtimeService: SessionRuntimeService
+    private val runtimeService: SessionRuntimeService,
 ) {
     @GetMapping("/{id}/logs")
     fun listLogs(
         @PathVariable id: Long,
         @RequestParam(defaultValue = "0") offset: Int,
-        @RequestParam(defaultValue = "1000") limit: Int
-    ): ResponseEntity<List<SessionLogResponse>> =
-        ResponseEntity.ok(runtimeService.listLogs(id, offset, limit))
+        @RequestParam(defaultValue = "1000") limit: Int,
+    ): ResponseEntity<List<SessionLogResponse>> = ResponseEntity.ok(runtimeService.listLogs(id, offset, limit))
 
     @PostMapping("/{id}/git")
     fun runGitCommand(
         @PathVariable id: Long,
-        @RequestBody request: GitCommandRequest
-    ): ResponseEntity<GitCommandResponse> =
-        ResponseEntity.ok(runtimeService.runGitCommand(id, request))
+        @RequestBody request: GitCommandRequest,
+    ): ResponseEntity<GitCommandResponse> = ResponseEntity.ok(runtimeService.runGitCommand(id, request))
 
     @GetMapping("/{id}/context")
-    fun exportContext(@PathVariable id: Long): ResponseEntity<SessionContextResponse> =
-        ResponseEntity.ok(runtimeService.exportContext(id))
+    fun exportContext(
+        @PathVariable id: Long,
+    ): ResponseEntity<SessionContextResponse> = ResponseEntity.ok(runtimeService.exportContext(id))
 }

@@ -11,31 +11,31 @@
   },
   "wireit": {
     "ng": {
-      "command": "ng"
+      "command": "npx ng"
     },
     "openapi-generate": {
       "command": "openapi-generator-cli generate -i ../backend/src/main/resources/openapi/openapi.yaml -g typescript-angular -o src/app/core/openapi --additional-properties stringEnums=true,fileNaming=kebab-case,enumPropertyNaming=UPPERCASE,withInterfaces=true,supportsES6=true,configurationPrefix=OpenApi,ngVersion=21.0.0,providedInRoot=true"
     },
     "start": {
-      "command": "ng serve --port 8765",
+      "command": "npx ng serve --port 8765",
       "dependencies": [
         "openapi-generate"
       ]
     },
     "build": {
-      "command": "ng build",
+      "command": "npx ng build",
       "dependencies": [
         "openapi-generate"
       ]
     },
     "watch": {
-      "command": "ng build --watch --configuration development",
+      "command": "npx ng build --watch --configuration development",
       "dependencies": [
         "openapi-generate"
       ]
     },
     "test": {
-      "command": "ng test",
+      "command": "npx ng test",
       "dependencies": [
         "openapi-generate"
       ]

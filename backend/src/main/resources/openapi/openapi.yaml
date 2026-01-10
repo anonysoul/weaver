@@ -2,49 +2,55 @@ openapi: "3.0.2"
 info:
   title: Weaver API
   version: "0.0.1"
-  description: Repository management APIs.
+  description: GitLab provider management APIs.
 servers:
-  - url: /
+  - url: /api
 paths:
-  /api/repos:
+  /providers:
     get:
-      operationId: listRepos
-      summary: List repositories
+      operationId: listProviders
+      summary: List providers
+      tags:
+        - Providers
       responses:
         "200":
-          description: Repository list
+          description: Provider list
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/RepoResponse"
+                  $ref: "#/components/schemas/ProviderResponse"
     post:
-      operationId: createRepo
-      summary: Create repository
+      operationId: createProvider
+      summary: Create provider
+      tags:
+        - Providers
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RepoRequest"
+              $ref: "#/components/schemas/ProviderRequest"
       responses:
         "201":
-          description: Repository created
+          description: Provider created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RepoResponse"
+                $ref: "#/components/schemas/ProviderResponse"
         "400":
           description: Invalid request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /api/repos/{id}:
+  /providers/{id}:
     put:
-      operationId: updateRepo
-      summary: Update repository
+      operationId: updateProvider
+      summary: Update provider
+      tags:
+        - Providers
       parameters:
         - name: id
           in: path
@@ -57,14 +63,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RepoRequest"
+              $ref: "#/components/schemas/ProviderRequest"
       responses:
         "200":
-          description: Repository updated
+          description: Provider updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RepoResponse"
+                $ref: "#/components/schemas/ProviderResponse"
         "400":
           description: Invalid request
           content:
@@ -72,14 +78,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: Repository not found
+          description: Provider not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
     delete:
-      operationId: deleteRepo
-      summary: Delete repository
+      operationId: deleteProvider
+      summary: Delete provider
+      tags:
+        - Providers
       parameters:
         - name: id
           in: path
@@ -89,17 +97,19 @@ paths:
             format: int64
       responses:
         "204":
-          description: Repository deleted
+          description: Provider deleted
         "404":
-          description: Repository not found
+          description: Provider not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /api/repos/{id}/test:
+  /providers/{id}/test:
     post:
-      operationId: testRepoConnection
-      summary: Test repository connection
+      operationId: testProviderConnection
+      summary: Test provider connection
+      tags:
+        - Providers
       parameters:
         - name: id
           in: path
@@ -107,12 +117,6 @@ paths:
           schema:
             type: integer
             format: int64
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
       responses:
         "200":
           description: Connection test result
@@ -121,61 +125,94 @@ paths:
               schema:
                 $ref: "#/components/schemas/ConnectionTestResponse"
         "404":
-          description: Repository not found
+          description: Provider not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /providers/{id}/repos:
+    get:
+      operationId: listProviderRepos
+      summary: List GitLab repositories
+      tags:
+        - Providers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: GitLab repository list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GitLabRepoResponse"
+        "404":
+          description: Provider not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
-    RepoRequest:
+    ProviderRequest:
       type: object
       required:
         - name
-        - url
-        - defaultBranch
+        - baseUrl
+        - token
       properties:
         name:
           type: string
-        url:
+        baseUrl:
           type: string
-        defaultBranch:
-          type: string
-        credential:
-          $ref: "#/components/schemas/CredentialRequest"
-    CredentialRequest:
-      type: object
-      required:
-        - type
-      properties:
-        type:
-          $ref: "#/components/schemas/CredentialType"
-        username:
-          type: string
-          nullable: true
         token:
           type: string
-          nullable: true
-    RepoResponse:
+    ProviderResponse:
       type: object
       required:
         - id
         - name
-        - url
-        - defaultBranch
+        - baseUrl
+        - type
       properties:
         id:
           type: integer
           format: int64
         name:
           type: string
-        url:
+        baseUrl:
+          type: string
+        type:
+          $ref: "#/components/schemas/ProviderType"
+    GitLabRepoResponse:
+      type: object
+      required:
+        - id
+        - name
+        - pathWithNamespace
+        - webUrl
+        - httpUrlToRepo
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        pathWithNamespace:
           type: string
         defaultBranch:
           type: string
-        credentialType:
-          $ref: "#/components/schemas/CredentialType"
           nullable: true
+        webUrl:
+          type: string
+        httpUrlToRepo:
+          type: string
     ConnectionTestResponse:
       type: object
       required:
@@ -193,7 +230,7 @@ components:
       properties:
         error:
           type: string
-    CredentialType:
+    ProviderType:
       type: string
       enum:
-        - HTTPS_PAT
+        - GITLAB

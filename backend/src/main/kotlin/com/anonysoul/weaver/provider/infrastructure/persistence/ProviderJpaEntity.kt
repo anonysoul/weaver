@@ -1,5 +1,6 @@
-package com.anonysoul.weaver.repo
+package com.anonysoul.weaver.provider.infrastructure.persistence
 
+import com.anonysoul.weaver.provider.ProviderType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -11,17 +12,20 @@ import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
-@Table(name = "credentials")
-class CredentialEntity(
+@Table(name = "scm_providers")
+class ProviderJpaEntity(
+    @Column(nullable = false)
+    var name: String,
+
+    @Column(name = "base_url", nullable = false, length = 1024)
+    var baseUrl: String,
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    var type: CredentialType,
+    var type: ProviderType,
 
-    @Column
-    var username: String?,
-
-    @Column(name = "encrypted_secret", nullable = false, length = 4096)
-    var encryptedSecret: String,
+    @Column(name = "encrypted_token", nullable = false, length = 4096)
+    var encryptedToken: String,
 
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant = Instant.now(),

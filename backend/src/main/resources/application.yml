@@ -15,6 +15,6 @@ spring:
 
 weaver:
   crypto:
-    key: ${WEAVER_CRYPTO_KEY:}
+    key: ${WEAVER_CRYPTO_KEY:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
   cors:
     origins: ${WEAVER_CORS_ORIGINS:http://localhost:4200}

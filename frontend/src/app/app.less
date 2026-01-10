@@ -220,6 +220,45 @@ input:focus {
   flex-wrap: wrap;
 }
 
+.repo-listing {
+  border-top: 1px solid rgba(27, 29, 34, 0.08);
+  padding-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.repo-listing-title {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.repo-listing ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.repo-listing li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.repo-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.repo-branch {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+}
+
 .empty {
   padding: 36px;
   text-align: center;

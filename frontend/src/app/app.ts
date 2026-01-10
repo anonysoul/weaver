@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { RepoApiService, RepoRequest, RepoResponse } from './core/openapi';
+import { GitLabRepoResponse, ProviderApiService, ProviderRequest, ProviderResponse } from './core/openapi';
 
 @Component({
   selector: 'app-root',
@@ -11,33 +11,39 @@ import { RepoApiService, RepoRequest, RepoResponse } from './core/openapi';
   styleUrl: './app.less'
 })
 export class App {
-  protected repos: RepoResponse[] = [];
-  protected loading = false;
+  protected providers: ProviderResponse[] = [];
+  /**
+   * 按连接 ID 缓存 GitLab 仓库列表
+   */
+  protected repos: Record<number, GitLabRepoResponse[]> = {};
+  protected loadingProviders = false;
+  /**
+   * 按连接 ID 记录仓库列表加载状态
+   */
+  protected loadingRepos: Record<number, boolean> = {};
   protected status: string | null = null;
   protected editingId: number | null = null;
   protected showForm = false;
   protected form = {
     name: '',
-    url: '',
-    defaultBranch: 'main',
-    username: '',
+    baseUrl: 'https://gitlab.com',
     token: ''
   };
 
-  constructor(private readonly repoApi: RepoApiService) {
+  constructor(private readonly providerApi: ProviderApiService) {
     this.refresh();
   }
 
   refresh(): void {
-    this.loading = true;
-    this.repoApi.listRepos().subscribe({
-      next: (repos) => {
-        this.repos = repos;
-        this.loading = false;
+    this.loadingProviders = true;
+    this.providerApi.listProviders().subscribe({
+      next: (providers) => {
+        this.providers = providers;
+        this.loadingProviders = false;
       },
       error: () => {
-        this.status = '加载仓库列表失败';
-        this.loading = false;
+        this.status = '加载 GitLab 连接列表失败';
+        this.loadingProviders = false;
       }
     });
   }
@@ -47,22 +53,18 @@ export class App {
     this.showForm = true;
     this.form = {
       name: '',
-      url: '',
-      defaultBranch: 'main',
-      username: '',
+      baseUrl: 'https://gitlab.com',
       token: ''
     };
     this.status = null;
   }
 
-  startEdit(repo: RepoResponse): void {
-    this.editingId = repo.id;
+  startEdit(provider: ProviderResponse): void {
+    this.editingId = provider.id;
     this.showForm = true;
     this.form = {
-      name: repo.name,
-      url: repo.url,
-      defaultBranch: repo.defaultBranch,
-      username: '',
+      name: provider.name,
+      baseUrl: provider.baseUrl,
       token: ''
     };
     this.status = null;
@@ -70,39 +72,30 @@ export class App {
 
   save(): void {
     const formValue = this.form;
-    const payload: RepoRequest = {
+    const payload: ProviderRequest = {
       name: formValue.name.trim(),
-      url: formValue.url.trim(),
-      defaultBranch: formValue.defaultBranch.trim(),
-      credential: formValue.token.trim()
-        ? {
-            type: 'HTTPS_PAT',
-            username: formValue.username.trim() || undefined,
-            token: formValue.token.trim()
-          }
-        : undefined
+      baseUrl: formValue.baseUrl.trim(),
+      token: formValue.token.trim()
     };
 
-    if (!payload.name || !payload.url || !payload.defaultBranch) {
-      this.status = '请填写完整的仓库信息';
+    if (!payload.name || !payload.baseUrl || !payload.token) {
+      this.status = '请填写完整的 GitLab 连接信息';
       return;
     }
 
     const editingId = this.editingId;
     const request$ = editingId
-      ? this.repoApi.updateRepo(editingId, payload)
-      : this.repoApi.createRepo(payload);
+      ? this.providerApi.updateProvider(editingId, payload)
+      : this.providerApi.createProvider(payload);
 
     request$.subscribe({
       next: () => {
-        this.status = editingId ? '仓库已更新' : '仓库已创建';
+        this.status = editingId ? 'GitLab 连接已更新' : 'GitLab 连接已创建';
         this.refresh();
         if (!editingId) {
           this.form = {
             name: '',
-            url: '',
-            defaultBranch: 'main',
-            username: '',
+            baseUrl: 'https://gitlab.com',
             token: ''
           };
           this.showForm = false;
@@ -110,16 +103,16 @@ export class App {
         }
       },
       error: (err) => {
-        const message = err?.error?.error || '保存失败，请检查仓库信息';
+        const message = err?.error?.error || '保存失败，请检查 GitLab 连接信息';
         this.status = message;
       }
     });
   }
 
-  remove(repo: RepoResponse): void {
-    this.repoApi.deleteRepo(repo.id).subscribe({
+  remove(provider: ProviderResponse): void {
+    this.providerApi.deleteProvider(provider.id).subscribe({
       next: () => {
-        this.status = '仓库已删除';
+        this.status = 'GitLab 连接已删除';
         this.refresh();
       },
       error: () => {
@@ -128,14 +121,32 @@ export class App {
     });
   }
 
-  test(repo: RepoResponse): void {
-    this.repoApi.testRepoConnection(repo.id).subscribe({
+  test(provider: ProviderResponse): void {
+    this.providerApi.testProviderConnection(provider.id).subscribe({
       next: (result) => {
         this.status = result.ok ? `连接成功：${result.message}` : `连接失败：${result.message}`;
       },
       error: (err) => {
         const message = err?.error?.error || '连接测试失败';
         this.status = message;
+      }
+    });
+  }
+
+  loadRepos(provider: ProviderResponse): void {
+    /**
+     * 拉取单个 GitLab 连接的仓库清单
+     */
+    this.loadingRepos[provider.id] = true;
+    this.providerApi.listProviderRepos(provider.id).subscribe({
+      next: (repos) => {
+        this.repos[provider.id] = repos;
+        this.loadingRepos[provider.id] = false;
+      },
+      error: (err) => {
+        const message = err?.error?.error || '加载仓库失败';
+        this.status = message;
+        this.loadingRepos[provider.id] = false;
       }
     });
   }

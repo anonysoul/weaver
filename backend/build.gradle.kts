@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("org.springframework.boot") version "3.3.0"
     id("io.spring.dependency-management") version "1.1.5"
+    id("org.openapi.generator") version "7.12.0"
     kotlin("jvm") version "1.9.24"
     kotlin("plugin.spring") version "1.9.24"
     kotlin("plugin.jpa") version "1.9.24"
@@ -33,6 +34,12 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
+sourceSets {
+    main {
+        kotlin.srcDir(projectDir.resolve("build/generated/openapi/src/main/kotlin").absolutePath)
+    }
+}
+
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
@@ -42,4 +49,31 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks {
+    openApiValidate {
+        inputSpec.set(projectDir.resolve("src/main/resources/openapi/openapi.yaml").absolutePath.toString())
+    }
+
+    openApiGenerate {
+        generatorName.set("kotlin-spring")
+        inputSpec.set(projectDir.resolve("src/main/resources/openapi/openapi.yaml").absolutePath.toString())
+        outputDir.set(projectDir.resolve("build/generated/openapi").absolutePath.toString())
+        apiPackage.set("com.anonysoul.weaver.provider.api")
+        modelPackage.set("com.anonysoul.weaver.provider")
+        configOptions.set(
+            mapOf(
+                "enumPropertyNaming" to "UPPERCASE",
+                "interfaceOnly" to "true",
+                "useSpringBoot3" to "true",
+                "requestMappingMode" to "api_interface",
+            ),
+        )
+        cleanupOutput.set(true)
+    }
+
+    compileKotlin {
+        dependsOn(openApiGenerate)
+    }
 }

@@ -1,47 +1,36 @@
 <div class="page">
   <header class="hero">
     <div class="hero-text">
-      <p class="eyebrow">Weaver · Repo Control</p>
-      <h1>管理你的 Git 仓库与认证</h1>
+      <p class="eyebrow">Weaver · GitLab Control</p>
+      <h1>管理 GitLab 连接与仓库清单</h1>
       <p class="subtitle">
-        在这里录入远程仓库、配置 HTTPS 凭据，并随时验证连接可用性。
+        先建立 GitLab 平台连接，再拉取你的仓库列表，确保连接可用。
       </p>
     </div>
     <div class="hero-card">
       <div class="card-header">
-        <h2>{{ editingId ? '编辑仓库' : '新增仓库' }}</h2>
+        <h2>{{ editingId ? '编辑 GitLab 连接' : '新增 GitLab 连接' }}</h2>
         <button class="ghost" type="button" (click)="startCreate()" *ngIf="showForm">清空表单</button>
       </div>
       <form class="repo-form" (ngSubmit)="save()" *ngIf="showForm; else formHint">
         <label>
-          <span>仓库名称</span>
-          <input type="text" [(ngModel)]="form.name" name="name" placeholder="例如：weaver-core" />
+          <span>连接名称</span>
+          <input type="text" [(ngModel)]="form.name" name="name" placeholder="例如：GitLab 主账号" />
         </label>
         <label>
-          <span>远程 URL</span>
-          <input type="text" [(ngModel)]="form.url" name="url" placeholder="https://github.com/org/repo.git" />
+          <span>GitLab Base URL</span>
+          <input type="text" [(ngModel)]="form.baseUrl" name="baseUrl" placeholder="https://gitlab.com" />
         </label>
         <label>
-          <span>默认分支</span>
-          <input type="text" [(ngModel)]="form.defaultBranch" name="defaultBranch" />
+          <span>访问令牌</span>
+          <input type="password" [(ngModel)]="form.token" name="token" placeholder="不会回显或保存明文" />
         </label>
-        <div class="section">
-          <p class="section-title">HTTPS + PAT 认证</p>
-          <label>
-            <span>用户名</span>
-            <input type="text" [(ngModel)]="form.username" name="username" placeholder="git" />
-          </label>
-          <label>
-            <span>访问令牌</span>
-            <input type="password" [(ngModel)]="form.token" name="token" placeholder="不会回显或保存明文" />
-          </label>
-        </div>
-        <button class="primary" type="submit">{{ editingId ? '保存修改' : '创建仓库' }}</button>
+        <button class="primary" type="submit">{{ editingId ? '保存修改' : '创建连接' }}</button>
         <p class="status" *ngIf="status">{{ status }}</p>
       </form>
       <ng-template #formHint>
         <div class="form-hint">
-          <p>先选择添加仓库，再填写远程地址与认证信息。</p>
+          <p>先创建 GitLab 连接，再拉取仓库列表。</p>
         </div>
       </ng-template>
     </div>
@@ -49,32 +38,42 @@
 
   <section class="list-section">
     <div class="list-header">
-      <h3>已配置仓库</h3>
+      <h3>已配置 GitLab 连接</h3>
       <div class="list-actions">
-        <button class="ghost" type="button" (click)="startCreate()">添加仓库</button>
-        <button class="ghost" type="button" (click)="refresh()" [disabled]="loading">刷新列表</button>
+        <button class="ghost" type="button" (click)="startCreate()">添加连接</button>
+        <button class="ghost" type="button" (click)="refresh()" [disabled]="loadingProviders">刷新列表</button>
       </div>
     </div>
-    <div class="repo-list" *ngIf="repos.length; else emptyState">
-      <article class="repo-card" *ngFor="let repo of repos">
+    <div class="repo-list" *ngIf="providers.length; else emptyState">
+      <article class="repo-card" *ngFor="let provider of providers">
         <div>
-          <h4>{{ repo.name }}</h4>
-          <p class="repo-url">{{ repo.url }}</p>
+          <h4>{{ provider.name }}</h4>
+          <p class="repo-url">{{ provider.baseUrl }}</p>
         </div>
         <div class="repo-meta">
-          <span>默认分支：{{ repo.defaultBranch }}</span>
-          <span>认证方式：{{ repo.credentialType || '无' }}</span>
+          <span>平台类型：{{ provider.type }}</span>
         </div>
         <div class="repo-actions">
-          <button class="ghost" type="button" (click)="startEdit(repo)">编辑</button>
-          <button class="ghost" type="button" (click)="test(repo)">测试连接</button>
-          <button class="danger" type="button" (click)="remove(repo)">删除</button>
+          <button class="ghost" type="button" (click)="startEdit(provider)">编辑</button>
+          <button class="ghost" type="button" (click)="test(provider)">测试连接</button>
+          <button class="ghost" type="button" (click)="loadRepos(provider)">拉取仓库</button>
+          <button class="danger" type="button" (click)="remove(provider)">删除</button>
         </div>
+        <div class="repo-listing" *ngIf="repos[provider.id]?.length">
+          <p class="repo-listing-title">仓库列表</p>
+          <ul>
+            <li *ngFor="let repo of repos[provider.id]">
+              <span class="repo-name">{{ repo.pathWithNamespace }}</span>
+              <span class="repo-branch">默认分支：{{ repo.defaultBranch || '未知' }}</span>
+            </li>
+          </ul>
+        </div>
+        <p class="status" *ngIf="loadingRepos[provider.id]">正在加载仓库...</p>
       </article>
     </div>
     <ng-template #emptyState>
       <div class="empty">
-        <p>还没有仓库记录，先从上方创建一个吧。</p>
+        <p>还没有 GitLab 连接记录，先从上方创建一个吧。</p>
       </div>
     </ng-template>
   </section>

@@ -1,0 +1,107 @@
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <p class="panel-kicker">Session</p>
+      <h3>会话编排与状态追踪</h3>
+      <p class="panel-subtitle">让同一仓库下的多会话并行运行、互不干扰。</p>
+    </div>
+    <button class="ghost" type="button" (click)="refreshSessions.emit()" [disabled]="loadingSessions">
+      {{ loadingSessions ? '刷新中' : '刷新会话' }}
+    </button>
+  </div>
+  <div class="panel-grid">
+    <div class="panel-card">
+      <div>
+        <p class="card-kicker">Builder</p>
+        <h4>创建 Session</h4>
+      </div>
+      <div class="stack">
+        <label>
+          选择 Provider
+          <select
+            [(ngModel)]="selectedProviderId"
+            (ngModelChange)="onProviderChange()"
+            [ngModelOptions]="{ standalone: true }"
+          >
+            <option [ngValue]="null">请选择 Provider</option>
+            <option *ngFor="let provider of providers" [ngValue]="provider.id">
+              {{ provider.name }}
+            </option>
+          </select>
+        </label>
+        <label>
+          选择仓库
+          <select
+            [(ngModel)]="selectedRepoId"
+            [disabled]="selectedProviderId === null"
+            [ngModelOptions]="{ standalone: true }"
+          >
+            <option [ngValue]="null">请选择仓库</option>
+            <option *ngFor="let repo of availableRepos" [ngValue]="repo.id">
+              {{ repo.pathWithNamespace }}
+            </option>
+          </select>
+        </label>
+      </div>
+      <p class="muted" *ngIf="!providers.length">暂无 Provider，请先创建连接。</p>
+      <div class="session-meta" *ngIf="selectedRepo">
+        <p class="muted">默认分支：{{ selectedRepo.defaultBranch || '未知' }}</p>
+        <p class="mono">{{ selectedRepo.httpUrlToRepo }}</p>
+      </div>
+      <p class="muted" *ngIf="selectedProviderId && !availableRepos.length">
+        该 Provider 暂未拉取仓库，请先在仓库目录拉取。
+      </p>
+      <button
+        class="primary"
+        type="button"
+        (click)="requestCreate()"
+        [disabled]="!selectedRepo || creatingSession"
+      >
+        {{ creatingSession ? '创建中' : '创建 Session' }}
+      </button>
+    </div>
+
+    <div class="panel-card">
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Sessions</p>
+          <h4>会话列表</h4>
+        </div>
+        <span class="badge">共 {{ sessions.length }} 个</span>
+      </div>
+      <div class="session-list" *ngIf="sessions.length; else sessionEmpty">
+        <article class="session-item" *ngFor="let session of sessions">
+          <div class="session-head">
+            <div>
+              <p class="session-repo">{{ session.repoPathWithNamespace }}</p>
+              <p class="muted">Provider：{{ providerName(session.providerId) }}</p>
+            </div>
+            <span class="status-badge" [ngClass]="statusClass(session.status)">
+              {{ statusLabel(session.status) }}
+            </span>
+          </div>
+          <div class="session-details">
+            <p class="mono">Workspace：{{ session.workspacePath || '准备中' }}</p>
+            <p class="muted">更新时间：{{ session.updatedAt | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+            <p class="warning" *ngIf="session.status === 'FAILED' && session.errorMessage">
+              {{ session.errorMessage }}
+            </p>
+          </div>
+          <div class="session-actions">
+            <button class="danger" type="button" (click)="deleteSession.emit(session)">删除</button>
+          </div>
+        </article>
+      </div>
+      <ng-template #sessionEmpty>
+        <ng-container *ngIf="!loadingSessions; else sessionLoading">
+          <div class="empty">
+            <p>暂无 Session，可先选择仓库创建。</p>
+          </div>
+        </ng-container>
+      </ng-template>
+      <ng-template #sessionLoading>
+        <p class="muted">会话加载中，请稍候。</p>
+      </ng-template>
+    </div>
+  </div>
+</section>

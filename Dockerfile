@@ -18,6 +18,7 @@ RUN ./gradlew --no-daemon bootJar -x test
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 ENV JAVA_OPTS=""
+RUN apk add --no-cache docker-cli
 COPY --from=backend-build /app/backend/build/libs/*.jar /app/app.jar
 EXPOSE 8080
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]

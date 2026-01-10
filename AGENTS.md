@@ -4,6 +4,7 @@
 - `backend/`: Kotlin + Spring Boot 服务（Gradle）。主代码在 `backend/src/main/kotlin`，资源在 `backend/src/main/resources`。
 - `frontend/`: Angular 应用（TypeScript + Less）。应用代码在 `frontend/src/app`，全局样式在 `frontend/src/styles.less`。
 - `documents/`: 项目文档与路线图（见 `documents/ROADMAP.md`）。
+- `containers/`: AI 适配容器镜像与构建文件（如 `containers/codex/`）。
 - OpenAPI 规范位于 `backend/src/main/resources/openapi/openapi.yaml`，生成代码路径：
   - 后端：`backend/build/generated/openapi`
   - 前端：`frontend/src/app/core/openapi`

@@ -158,6 +158,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /sessions:
+    get:
+      operationId: listSessions
+      summary: List sessions
+      tags:
+        - Sessions
+      responses:
+        "200":
+          description: Session list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SessionResponse"
+    post:
+      operationId: createSession
+      summary: Create session
+      tags:
+        - Sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionRequest"
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /sessions/{id}:
+    get:
+      operationId: getSession
+      summary: Get session
+      tags:
+        - Sessions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteSession
+      summary: Delete session
+      tags:
+        - Sessions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Session deleted
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     ProviderRequest:
@@ -234,3 +320,78 @@ components:
       type: string
       enum:
         - GITLAB
+    SessionRequest:
+      type: object
+      required:
+        - providerId
+        - repoId
+        - repoName
+        - repoPathWithNamespace
+        - repoHttpUrl
+      properties:
+        providerId:
+          type: integer
+          format: int64
+        repoId:
+          type: integer
+          format: int64
+        repoName:
+          type: string
+        repoPathWithNamespace:
+          type: string
+        repoHttpUrl:
+          type: string
+        defaultBranch:
+          type: string
+          nullable: true
+    SessionResponse:
+      type: object
+      required:
+        - id
+        - providerId
+        - repoId
+        - repoName
+        - repoPathWithNamespace
+        - repoHttpUrl
+        - status
+        - workspacePath
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        providerId:
+          type: integer
+          format: int64
+        repoId:
+          type: integer
+          format: int64
+        repoName:
+          type: string
+        repoPathWithNamespace:
+          type: string
+        repoHttpUrl:
+          type: string
+        defaultBranch:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/SessionStatus"
+        workspacePath:
+          type: string
+        errorMessage:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SessionStatus:
+      type: string
+      enum:
+        - CREATING
+        - READY
+        - FAILED

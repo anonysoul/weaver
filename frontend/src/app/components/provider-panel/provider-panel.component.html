@@ -1,0 +1,75 @@
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <p class="panel-kicker">SCM Provider</p>
+      <h3>连接配置与验证</h3>
+      <p class="panel-subtitle">统一管理 GitLab 凭据，保持认证信息加密存储。</p>
+    </div>
+  </div>
+
+  <div class="panel-grid">
+    <div class="panel-card">
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Connector</p>
+          <h4>{{ editingId ? '编辑连接' : '创建新连接' }}</h4>
+        </div>
+        <button class="ghost" type="button" (click)="startCreate.emit()" *ngIf="showForm">
+          清空表单
+        </button>
+      </div>
+      <form class="stack" (ngSubmit)="save.emit()" *ngIf="showForm; else formHint">
+        <label>
+          <span>连接名称</span>
+          <input type="text" [(ngModel)]="form.name" name="name" placeholder="例如：GitLab 主账号" />
+        </label>
+        <label>
+          <span>GitLab Base URL</span>
+          <input type="text" [(ngModel)]="form.baseUrl" name="baseUrl" placeholder="https://gitlab.com" />
+        </label>
+        <label>
+          <span>访问令牌</span>
+          <input type="password" [(ngModel)]="form.token" name="token" placeholder="不会回显或保存明文" />
+        </label>
+        <button class="primary" type="submit">{{ editingId ? '保存修改' : '创建连接' }}</button>
+      </form>
+      <ng-template #formHint>
+        <div class="form-hint">
+          <p>先建立 Provider 连接，再进入仓库目录与 Session 管理。</p>
+          <button class="primary" type="button" (click)="startCreate.emit()">开始创建连接</button>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="panel-card">
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Inventory</p>
+          <h4>已配置连接</h4>
+        </div>
+        <p class="muted">{{ loadingProviders ? '加载中...' : '可直接测试连接' }}</p>
+      </div>
+      <div class="provider-list" *ngIf="providers.length; else emptyState">
+        <article class="provider-item" *ngFor="let provider of providers">
+          <div class="provider-head">
+            <div>
+              <h5>{{ provider.name }}</h5>
+              <p class="muted">{{ provider.baseUrl }}</p>
+            </div>
+            <span class="badge">{{ provider.type }}</span>
+          </div>
+          <div class="provider-actions">
+            <button class="ghost" type="button" (click)="startEdit.emit(provider)">编辑</button>
+            <button class="ghost" type="button" (click)="test.emit(provider)">测试连接</button>
+            <button class="danger" type="button" (click)="remove.emit(provider)">删除</button>
+          </div>
+        </article>
+      </div>
+      <ng-template #emptyState>
+        <div class="empty">
+          <p>还没有 Provider 连接记录，先创建一个吧。</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</section>

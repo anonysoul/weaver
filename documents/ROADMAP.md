@@ -8,14 +8,18 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - 启动容器后即可通过 **Web 浏览器访问**
 - 在 Web UI 中配置和管理多个 **代码托管平台连接** 与其下的仓库
 - 支持为同一个 Git 远程仓库创建 **多个独立的 Codex / AI 编码会话**
+- 每个会话对应一个 **独立的 Docker 容器**，镜像由 Weaver 构建与发布
+- 由于以 Docker 交付且会话创建需要启动容器，必须采用 **Docker in Docker** 方案
+- 创建会话后立即创建容器，并在容器内拉取代码到 `/root/workspace/{projectName}`
+- 通过 Web 页面与 AI 进行会话，由 AI 在该项目内进行修改
 - 每个会话拥有独立的 workspace，用于 AI 编码与上下文隔离
-- 仅提供 **仓库与会话环境管理**，不包含模型调用或 AI 代理执行逻辑
 
 技术栈：
 - 后端：Kotlin（Spring Boot）
 - 前端：Angular
 - 数据库：SQLite
 - 接口与规范：OpenAPI（后端提供 spec，前端基于 spec 生成类型与客户端）
+- 容器镜像与构建文件：`containers/`（如 `containers/codex/`）
 
 ---
 
@@ -37,7 +41,7 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 ### 2.4 Workspace
 - Session 对应的本地工作目录
 - 用于 clone / checkout Git 仓库
-- 容器内路径示例：`/data/weaver/workspaces/{sessionId}`
+- 容器内路径示例：`/root/workspace/{projectName}`
 
 # 项目里程碑（Milestones）
 
@@ -95,16 +99,18 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 ### 验收标准
 - Web UI 可创建 / 删除会话
 - 创建会话时可选择一个仓库
-- 后端为每个会话创建独立 workspace 目录
-- 选定仓库会被 clone 到会话 workspace 中
+- 后端为每个会话创建独立 Docker 容器
+- 选定仓库会被 clone 到容器内 `/root/workspace/{projectName}`
 - 会话状态可见（creating / ready / failed）
 
 ### 主要任务
 - Session 数据模型
 - Session CRUD API
-- Workspace 目录结构设计
-- 会话初始化流程（clone 仓库）
+- 会话容器创建与镜像管理流程
+- Workspace 目录结构设计（容器内 `/root/workspace/{projectName}`）
+- 会话初始化流程（创建容器 + clone 仓库）
 - 初始化过程日志记录与状态更新
+- Docker in Docker 方案验证与最小运行配置
 
 
 ---

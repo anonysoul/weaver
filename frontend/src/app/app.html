@@ -1,80 +1,163 @@
-<div class="page">
-  <header class="hero">
-    <div class="hero-text">
-      <p class="eyebrow">Weaver · GitLab Control</p>
-      <h1>管理 GitLab 连接与仓库清单</h1>
-      <p class="subtitle">
-        先建立 GitLab 平台连接，再拉取你的仓库列表，确保连接可用。
-      </p>
-    </div>
-    <div class="hero-card">
-      <div class="card-header">
-        <h2>{{ editingId ? '编辑 GitLab 连接' : '新增 GitLab 连接' }}</h2>
-        <button class="ghost" type="button" (click)="startCreate()" *ngIf="showForm">清空表单</button>
-      </div>
-      <form class="repo-form" (ngSubmit)="save()" *ngIf="showForm; else formHint">
-        <label>
-          <span>连接名称</span>
-          <input type="text" [(ngModel)]="form.name" name="name" placeholder="例如：GitLab 主账号" />
-        </label>
-        <label>
-          <span>GitLab Base URL</span>
-          <input type="text" [(ngModel)]="form.baseUrl" name="baseUrl" placeholder="https://gitlab.com" />
-        </label>
-        <label>
-          <span>访问令牌</span>
-          <input type="password" [(ngModel)]="form.token" name="token" placeholder="不会回显或保存明文" />
-        </label>
-        <button class="primary" type="submit">{{ editingId ? '保存修改' : '创建连接' }}</button>
-        <p class="status" *ngIf="status">{{ status }}</p>
-      </form>
-      <ng-template #formHint>
-        <div class="form-hint">
-          <p>先创建 GitLab 连接，再拉取仓库列表。</p>
-        </div>
-      </ng-template>
-    </div>
-  </header>
+<div class="weaver-shell">
+  <app-sidebar [providersCount]="providers.length" [repoCount]="repoCount"></app-sidebar>
 
-  <section class="list-section">
-    <div class="list-header">
-      <h3>已配置 GitLab 连接</h3>
-      <div class="list-actions">
-        <button class="ghost" type="button" (click)="startCreate()">添加连接</button>
-        <button class="ghost" type="button" (click)="refresh()" [disabled]="loadingProviders">刷新列表</button>
+  <main class="main">
+    <app-topbar
+      [loadingProviders]="loadingProviders"
+      (refresh)="refresh()"
+      (startCreate)="startCreate()"
+    ></app-topbar>
+
+    <section class="mission reveal" id="dashboard" style="--delay: 0.05s;">
+      <div class="mission-copy">
+        <p class="mission-kicker">Weaver Roadmap · Milestone 1-2</p>
+        <h2>将 AI 编码会话编排为可控的仓库与工作区流程</h2>
+        <p class="mission-subtitle">
+          通过 Docker 单镜像运行的管理台，聚焦 Provider、Repository、Session、Workspace 全链路。
+        </p>
+        <div class="mission-tags">
+          <span class="tag">Docker 镜像交付</span>
+          <span class="tag">GitLab 接入</span>
+          <span class="tag">会话隔离</span>
+          <span class="tag">Workspace 管理</span>
+        </div>
       </div>
-    </div>
-    <div class="repo-list" *ngIf="providers.length; else emptyState">
-      <article class="repo-card" *ngFor="let provider of providers">
-        <div>
-          <h4>{{ provider.name }}</h4>
-          <p class="repo-url">{{ provider.baseUrl }}</p>
-        </div>
-        <div class="repo-meta">
-          <span>平台类型：{{ provider.type }}</span>
-        </div>
-        <div class="repo-actions">
-          <button class="ghost" type="button" (click)="startEdit(provider)">编辑</button>
-          <button class="ghost" type="button" (click)="test(provider)">测试连接</button>
-          <button class="ghost" type="button" (click)="loadRepos(provider)">拉取仓库</button>
-          <button class="danger" type="button" (click)="remove(provider)">删除</button>
-        </div>
-        <div class="repo-listing" *ngIf="repos[provider.id]?.length">
-          <p class="repo-listing-title">仓库列表</p>
+      <div class="mission-console">
+        <div class="console-card">
+          <p class="console-title">核心概念</p>
           <ul>
-            <li *ngFor="let repo of repos[provider.id]">
-              <span class="repo-name">{{ repo.pathWithNamespace }}</span>
-              <span class="repo-branch">默认分支：{{ repo.defaultBranch || '未知' }}</span>
-            </li>
+            <li>Provider：平台连接与凭据管理</li>
+            <li>Repository：按连接聚合远程仓库</li>
+            <li>Session：单仓库、多会话隔离</li>
+            <li>Workspace：会话对应的本地工作目录</li>
           </ul>
         </div>
-        <p class="status" *ngIf="loadingRepos[provider.id]">正在加载仓库...</p>
-      </article>
-    </div>
-    <ng-template #emptyState>
-      <div class="empty">
-        <p>还没有 GitLab 连接记录，先从上方创建一个吧。</p>
+        <div class="console-card console-highlight">
+          <p class="console-title">实时状态</p>
+        <div class="console-metrics">
+          <div>
+            <p class="metric-label">Providers</p>
+            <p class="metric-value">{{ providers.length }}</p>
+          </div>
+          <div>
+            <p class="metric-label">Repo Catalog</p>
+            <p class="metric-value">{{ totalRepoCount }}</p>
+          </div>
+          <div>
+            <p class="metric-label">Active Sessions</p>
+            <p class="metric-value">{{ sessions.length }}</p>
+          </div>
+        </div>
+        <p class="console-footnote">当前支持 GitLab，后续扩展 GitHub / Azure DevOps。</p>
       </div>
-    </ng-template>
-  </section>
+      </div>
+    </section>
+
+    <p class="global-status" *ngIf="status">{{ status }}</p>
+
+    <section class="section-block reveal" id="providers" style="--delay: 0.1s;">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Milestone 1</p>
+          <h3 class="section-title">Provider 连接管理</h3>
+          <p class="section-subtitle">建立 GitLab 连接，校验凭据并加密存储，为仓库同步打基础。</p>
+        </div>
+      </div>
+      <app-provider-panel
+        [providers]="providers"
+        [loadingProviders]="loadingProviders"
+        [showForm]="showForm"
+        [editingId]="editingId"
+        [form]="form"
+        (startCreate)="startCreate()"
+        (save)="save()"
+        (startEdit)="startEdit($event)"
+        (test)="test($event)"
+        (remove)="remove($event)"
+      ></app-provider-panel>
+    </section>
+
+    <section class="section-block reveal" id="repositories" style="--delay: 0.15s;">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Milestone 1</p>
+          <h3 class="section-title">仓库目录与绑定入口</h3>
+          <p class="section-subtitle">拉取仓库清单，为 Session 选择与初始化提供入口。</p>
+        </div>
+      </div>
+      <app-repo-catalog
+        [providers]="providers"
+        [repos]="repos"
+        [loadingRepos]="loadingRepos"
+        (loadRepos)="loadRepos($event)"
+      ></app-repo-catalog>
+    </section>
+
+    <section class="section-block reveal" id="sessions" style="--delay: 0.2s;">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Milestone 2</p>
+          <h3 class="section-title">Codex Session 管理</h3>
+          <p class="section-subtitle">为同一仓库创建多个会话，追踪状态与初始化日志。</p>
+        </div>
+      </div>
+      <app-session-panel
+        [providers]="providers"
+        [repos]="repos"
+        [sessions]="sessions"
+        [loadingSessions]="loadingSessions"
+        [creatingSession]="creatingSession"
+        (refreshSessions)="refreshSessions()"
+        (createSession)="createSession($event)"
+        (deleteSession)="deleteSession($event)"
+      ></app-session-panel>
+    </section>
+
+    <section class="section-block reveal" id="workspaces" style="--delay: 0.25s;">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Milestone 2-3</p>
+          <h3 class="section-title">Workspace 与日志能力</h3>
+          <p class="section-subtitle">展示 workspace 路径、日志流与受控 Git 操作入口。</p>
+        </div>
+      </div>
+      <app-workspace-panel></app-workspace-panel>
+    </section>
+
+    <section class="section-block reveal" id="milestones" style="--delay: 0.3s;">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Roadmap</p>
+          <h3 class="section-title">里程碑推进节奏</h3>
+          <p class="section-subtitle">从平台接入到多平台扩展，逐步完善会话与资源管理。</p>
+        </div>
+      </div>
+      <div class="roadmap">
+        <article class="roadmap-item">
+          <p class="roadmap-title">Milestone 0</p>
+          <p class="roadmap-text">单镜像可运行基础与浏览器访问。</p>
+        </article>
+        <article class="roadmap-item">
+          <p class="roadmap-title">Milestone 1</p>
+          <p class="roadmap-text">Provider 管理、仓库列表与连接校验。</p>
+        </article>
+        <article class="roadmap-item">
+          <p class="roadmap-title">Milestone 2</p>
+          <p class="roadmap-text">Session + Workspace 创建与状态跟踪。</p>
+        </article>
+        <article class="roadmap-item">
+          <p class="roadmap-title">Milestone 3</p>
+          <p class="roadmap-text">会话日志、Git 操作与上下文导出。</p>
+        </article>
+        <article class="roadmap-item">
+          <p class="roadmap-title">Milestone 4</p>
+          <p class="roadmap-text">并发隔离、清理与稳定性增强。</p>
+        </article>
+        <article class="roadmap-item">
+          <p class="roadmap-title">Milestone 5</p>
+          <p class="roadmap-text">扩展 GitHub / Azure DevOps 平台。</p>
+        </article>
+      </div>
+    </section>
+  </main>
 </div>

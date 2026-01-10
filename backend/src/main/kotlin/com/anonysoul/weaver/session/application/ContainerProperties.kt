@@ -8,4 +8,6 @@ import org.springframework.stereotype.Component
 class ContainerProperties {
     var image: String = "weaver-codex"
     var namePrefix: String = "weaver-session"
+    var dataVolume: String = "weaver-data"
+    var dataMountPath: String = "/data"
 }

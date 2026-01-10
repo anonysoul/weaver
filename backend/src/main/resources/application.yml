@@ -25,3 +25,19 @@ weaver:
   container:
     image: ${WEAVER_CONTAINER_IMAGE:weaver-codex}
     name-prefix: ${WEAVER_CONTAINER_NAME_PREFIX:weaver-session}
+    data-volume: ${WEAVER_CONTAINER_DATA_VOLUME:weaver-data}
+    data-mount-path: ${WEAVER_CONTAINER_DATA_MOUNT_PATH:/data}
+  session:
+    init:
+      core-pool-size: ${WEAVER_SESSION_INIT_CORE_POOL_SIZE:2}
+      max-pool-size: ${WEAVER_SESSION_INIT_MAX_POOL_SIZE:4}
+      queue-capacity: ${WEAVER_SESSION_INIT_QUEUE_CAPACITY:50}
+      thread-name-prefix: ${WEAVER_SESSION_INIT_THREAD_NAME_PREFIX:session-init-}
+    rate-limit:
+      enabled: ${WEAVER_SESSION_RATE_LIMIT_ENABLED:true}
+      max-requests: ${WEAVER_SESSION_RATE_LIMIT_MAX_REQUESTS:30}
+      window-seconds: ${WEAVER_SESSION_RATE_LIMIT_WINDOW_SECONDS:60}
+    cleanup:
+      enabled: ${WEAVER_SESSION_CLEANUP_ENABLED:true}
+      fixed-delay-millis: ${WEAVER_SESSION_CLEANUP_FIXED_DELAY_MILLIS:600000}
+      log-retention-days: ${WEAVER_SESSION_LOG_RETENTION_DAYS:7}

@@ -18,8 +18,8 @@ class SessionContainerManager(
     fun workspacePath(repoName: String): String = Paths.get(workspaceProperties.basePath, repoName.trim()).toString()
 
     fun createContainer(sessionId: Long): DockerCommandRunner.Result {
-        val command =
-            listOf(
+        val baseCommand =
+            mutableListOf(
                 "docker",
                 "run",
                 "-d",
@@ -27,10 +27,21 @@ class SessionContainerManager(
                 containerName(sessionId),
                 "--label",
                 "weaver.sessionId=$sessionId",
+            )
+        /**
+         * 通过 volume 持久化 /data
+         */
+        if (containerProperties.dataVolume.isNotBlank()) {
+            baseCommand.addAll(listOf("-v", "${containerProperties.dataVolume}:${containerProperties.dataMountPath}"))
+        }
+        baseCommand.addAll(
+            listOf(
                 containerProperties.image,
                 "sleep",
                 "infinity",
-            )
+            ),
+        )
+        val command = baseCommand.toList()
         return dockerCommandRunner.run(command)
     }
 
@@ -131,6 +142,20 @@ class SessionContainerManager(
                 "2",
                 "-type",
                 "d",
+            )
+        return dockerCommandRunner.run(command)
+    }
+
+    fun listSessionContainers(): DockerCommandRunner.Result {
+        val command =
+            listOf(
+                "docker",
+                "ps",
+                "-a",
+                "--filter",
+                "label=weaver.sessionId",
+                "--format",
+                "{{.Names}}|{{.Label \"weaver.sessionId\"}}",
             )
         return dockerCommandRunner.run(command)
     }

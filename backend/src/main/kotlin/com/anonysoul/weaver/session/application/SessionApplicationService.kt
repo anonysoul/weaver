@@ -30,6 +30,7 @@ class SessionApplicationService(
     private val sessionInitializer: SessionInitializer,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
+    private val repoNamePattern = Regex("^[A-Za-z0-9._-]+$")
 
     fun list(): List<SessionResponse> = sessionRepository.findAll().map { it.toResponse() }
 
@@ -94,8 +95,20 @@ class SessionApplicationService(
         if (request.repoName.isBlank()) {
             throw IllegalArgumentException("Repository name cannot be blank")
         }
+        /**
+         * 限制仓库名字符集，避免路径注入
+         */
+        if (!repoNamePattern.matches(request.repoName.trim())) {
+            throw IllegalArgumentException("Repository name contains invalid characters")
+        }
         if (request.repoPathWithNamespace.isBlank()) {
             throw IllegalArgumentException("Repository path cannot be blank")
+        }
+        /**
+         * 避免路径穿越
+         */
+        if (request.repoPathWithNamespace.contains("..")) {
+            throw IllegalArgumentException("Repository path cannot contain '..'")
         }
         if (request.repoHttpUrl.isBlank()) {
             throw IllegalArgumentException("Repository URL cannot be blank")

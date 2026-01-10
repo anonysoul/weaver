@@ -23,82 +23,87 @@ class SessionInitializer(
     private val providerRepository: ProviderRepository,
     private val tokenCipher: TokenCipher,
     private val sessionContainerManager: SessionContainerManager,
+    private val sessionLockManager: SessionLockManager,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    @Async
+    @Async("sessionInitializerExecutor")
     @Transactional
     fun initializeAsync(sessionId: Long) {
-        val session = sessionRepository.findById(sessionId) ?: return
-        logger.info("Initializing session container for sessionId={}", sessionId)
-        appendLog(sessionId, "Session container initialization started.")
-        var containerCreated = false
-        try {
-            val provider =
-                providerRepository.findById(session.providerId)
-                    ?: throw IllegalStateException("Provider not found")
-            val token = tokenCipher.decrypt(provider.encryptedToken)
-            val containerName = sessionContainerManager.containerName(sessionId)
-            appendLog(sessionId, "Creating session container.")
-            val createResult = sessionContainerManager.createContainer(sessionId)
-            if (createResult.exitCode != 0) {
-                val errorMessage = createResult.stderr.ifBlank { "Container creation failed" }
-                val updated = session.withStatus(SessionState.FAILED, Instant.now(), "Container creation failed")
-                sessionRepository.save(updated)
-                appendLog(sessionId, errorMessage.trim())
-                logger.warn("Container creation failed for sessionId={}", sessionId)
-                return
-            }
-            containerCreated = true
+        sessionLockManager.withLock(sessionId) {
+            val session = sessionRepository.findById(sessionId) ?: return@withLock
+            logger.info("Initializing session container for sessionId={}", sessionId)
+            appendLog(sessionId, "Session container initialization started.")
+            var containerCreated = false
+            try {
+                val provider =
+                    providerRepository.findById(session.providerId)
+                        ?: throw IllegalStateException("Provider not found")
+                val token = tokenCipher.decrypt(provider.encryptedToken)
+                val containerName = sessionContainerManager.containerName(sessionId)
+                appendLog(sessionId, "Creating session container.")
+                val createResult = sessionContainerManager.createContainer(sessionId)
+                if (createResult.exitCode != 0) {
+                    val errorMessage = createResult.stderr.ifBlank { "Container creation failed" }
+                    val updated = session.withStatus(SessionState.FAILED, Instant.now(), "Container creation failed")
+                    sessionRepository.save(updated)
+                    appendLog(sessionId, errorMessage.trim())
+                    logger.warn("Container creation failed for sessionId={}", sessionId)
+                    return@withLock
+                }
+                containerCreated = true
 
-            appendLog(sessionId, "Preparing workspace in container.")
-            val prepareResult = sessionContainerManager.prepareWorkspace(containerName)
-            if (prepareResult.exitCode != 0) {
-                val errorMessage = prepareResult.stderr.ifBlank { "Workspace preparation failed" }
-                val updated = session.withStatus(SessionState.FAILED, Instant.now(), "Workspace preparation failed")
-                sessionRepository.save(updated)
-                appendLog(sessionId, errorMessage.trim())
-                logger.warn("Workspace preparation failed for sessionId={}", sessionId)
-                sessionContainerManager.removeContainer(sessionId)
-                return
-            }
-            sessionContainerManager.clearWorkspace(containerName, session.repoName)
+                appendLog(sessionId, "Preparing workspace in container.")
+                val prepareResult = sessionContainerManager.prepareWorkspace(containerName)
+                if (prepareResult.exitCode != 0) {
+                    val errorMessage = prepareResult.stderr.ifBlank { "Workspace preparation failed" }
+                    val updated = session.withStatus(SessionState.FAILED, Instant.now(), "Workspace preparation failed")
+                    sessionRepository.save(updated)
+                    appendLog(sessionId, errorMessage.trim())
+                    logger.warn("Workspace preparation failed for sessionId={}", sessionId)
+                    sessionContainerManager.removeContainer(sessionId)
+                    return@withLock
+                }
+                sessionContainerManager.clearWorkspace(containerName, session.repoName)
 
-            appendLog(sessionId, "Cloning repository into container workspace.")
-            val result =
-                sessionContainerManager.cloneRepository(
-                    containerName,
-                    session.repoHttpUrl,
-                    token,
-                    session.repoName,
-                )
-            if (result.exitCode == 0) {
-                val updated = session.withStatus(SessionState.READY, Instant.now(), null)
+                appendLog(sessionId, "Cloning repository into container workspace.")
+                val result =
+                    sessionContainerManager.cloneRepository(
+                        containerName,
+                        session.repoHttpUrl,
+                        token,
+                        session.repoName,
+                    )
+                if (result.exitCode == 0) {
+                    val updated = session.withStatus(SessionState.READY, Instant.now(), null)
+                    sessionRepository.save(updated)
+                    appendLog(sessionId, "Workspace ready.")
+                    logger.info("Session ready for sessionId={}", sessionId)
+                } else {
+                    val errorMessage = sanitizeGitError(result.stderr, token).ifBlank { "Git clone failed" }
+                    val updated = session.withStatus(SessionState.FAILED, Instant.now(), errorMessage.trim())
+                    sessionRepository.save(updated)
+                    appendLog(sessionId, errorMessage.trim())
+                    logger.warn("Git clone failed for sessionId={}", sessionId)
+                    sessionContainerManager.removeContainer(sessionId)
+                }
+            } catch (ex: Exception) {
+                val updated = session.withStatus(SessionState.FAILED, Instant.now(), "Initialization failed")
                 sessionRepository.save(updated)
-                appendLog(sessionId, "Workspace ready.")
-                logger.info("Session ready for sessionId={}", sessionId)
-            } else {
-                val errorMessage = sanitizeGitError(result.stderr, token).ifBlank { "Git clone failed" }
-                val updated = session.withStatus(SessionState.FAILED, Instant.now(), errorMessage.trim())
-                sessionRepository.save(updated)
-                appendLog(sessionId, errorMessage.trim())
-                logger.warn("Git clone failed for sessionId={}", sessionId)
-                sessionContainerManager.removeContainer(sessionId)
-            }
-        } catch (ex: Exception) {
-            val updated = session.withStatus(SessionState.FAILED, Instant.now(), "Initialization failed")
-            sessionRepository.save(updated)
-            appendLog(sessionId, "Initialization failed: ${ex.message ?: "Unknown error"}")
-            logger.error("Initialization failed for sessionId={}", sessionId, ex)
-            if (containerCreated) {
-                sessionContainerManager.removeContainer(sessionId)
+                appendLog(sessionId, "Initialization failed: ${ex.message ?: "Unknown error"}")
+                logger.error("Initialization failed for sessionId={}", sessionId, ex)
+                if (containerCreated) {
+                    sessionContainerManager.removeContainer(sessionId)
+                }
             }
         }
     }
 
     fun cleanupSession(sessionId: Long) {
         logger.info("Cleaning up session container for sessionId={}", sessionId)
-        sessionContainerManager.removeContainer(sessionId)
+        sessionLockManager.withLock(sessionId) {
+            sessionContainerManager.removeContainer(sessionId)
+        }
     }
 
     @PreDestroy

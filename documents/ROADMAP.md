@@ -5,14 +5,14 @@
 Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目标是：
 
 - 以 **Docker 镜像** 形式交付和运行
-- 启动容器后即可通过 **Web 浏览器访问**
+- 启动容器后即可通过 **Web 浏览器访问 Web UI**
 - 在 Web UI 中配置和管理多个 **代码托管平台连接** 与其下的仓库
 - 支持为同一个 Git 远程仓库创建 **多个独立的 Codex / AI 编码会话**
 - 每个会话对应一个 **独立的 Docker 容器**，镜像由 Weaver 构建与发布
 - 由于以 Docker 交付且会话创建需要启动容器，必须采用 **Docker in Docker** 方案
 - 创建会话后立即创建容器，并在容器内拉取代码到 `/root/workspace/{projectName}`
-- 通过 Web 页面与 AI 进行会话，由 AI 在该项目内进行修改
-- 每个会话拥有独立的 workspace，用于 AI 编码与上下文隔离
+- 通过 Web UI 与 AI 进行会话，由 AI 在该项目内进行修改
+- 每个会话拥有独立的 Workspace，用于 AI 编码与上下文隔离
 
 技术栈：
 - 后端：Kotlin（Spring Boot）
@@ -43,13 +43,13 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - 用于 clone / checkout Git 仓库
 - 容器内路径示例：`/root/workspace/{projectName}`
 
-# 项目里程碑（Milestones）
+## 项目里程碑（Milestones）
 
 ## Milestone 0：项目骨架（可运行基础）
 
 ### 目标
 - 项目可以以 **单一 Docker 镜像** 的形式构建和运行
-- 启动容器后，可通过浏览器访问 Web 页面
+- 启动容器后，可通过浏览器访问 Web UI
 - 前后端基础通信正常
 
 ### 验收标准
@@ -61,7 +61,7 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - 技术栈落地（Kotlin / Angular / SQLite）
 - 初始化项目目录结构
 - 编写 Dockerfile（单镜像）
-- 基础 Web 页面与 API 服务
+- 基础 Web UI 与 API 服务
 - 基础配置与环境变量管理
 
 
@@ -85,7 +85,7 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - Provider CRUD API
 - GitLab API 封装（仓库列表、连接校验）
 - 认证信息加密与解密逻辑
-- GitLab 连接与仓库选择 UI 页面
+- GitLab 连接与仓库选择 UI
 
 ---
 
@@ -101,7 +101,7 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - 创建会话时可选择一个仓库
 - 后端为每个会话创建独立 Docker 容器
 - 选定仓库会被 clone 到容器内 `/root/workspace/{projectName}`
-- 会话状态可见（creating / ready / failed）
+- 会话状态可见（CREATING / READY / FAILED）
 
 ### 主要任务
 - Session 数据模型
@@ -132,7 +132,7 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - 会话日志存储与查询接口
 - Git 操作 API（白名单命令）
 - 会话上下文导出接口（JSON）
-- 会话详情 UI 页面
+- 会话详情 UI
 
 
 ---
@@ -146,7 +146,7 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 
 ### 验收标准
 - 多会话并行初始化互不影响
-- 会话删除后 workspace 可被正确清理
+- 会话删除后 Docker 容器可被正确清理
 - 凭据不泄露，日志与接口返回均脱敏
 - 支持通过 volume 持久化 `/data` 目录
 

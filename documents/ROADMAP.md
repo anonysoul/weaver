@@ -6,7 +6,7 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 
 - 以 **Docker 镜像** 形式交付和运行
 - 启动容器后即可通过 **Web 浏览器访问**
-- 在 Web UI 中配置和管理多个 **Git 仓库**（包含身份认证信息）
+- 在 Web UI 中配置和管理多个 **代码托管平台连接** 与其下的仓库
 - 支持为同一个 Git 远程仓库创建 **多个独立的 Codex / AI 编码会话**
 - 每个会话拥有独立的 workspace，用于 AI 编码与上下文隔离
 - 仅提供 **仓库与会话环境管理**，不包含模型调用或 AI 代理执行逻辑
@@ -21,15 +21,13 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 
 ## 2. 核心概念（Domain Model）
 
-### 2.1 Git Repository
-- 远程 Git 仓库的配置实体
-- 包含：URL、默认分支、认证信息等
+### 2.1 SCM Provider
+- 代码托管平台的配置实体（GitLab / GitHub / Azure DevOps）
+- 通过平台授权或访问令牌建立连接
 
-### 2.2 Credential
-- Git 身份认证信息
-- 支持类型：
-  - HTTPS + Personal Access Token（MVP）
-  - SSH Key（后续里程碑）
+### 2.2 Repository
+- 平台下的远程 Git 仓库
+- 由平台连接自动拉取或选择
 
 ### 2.3 Session（Codex Session）
 - 一次 AI 编码会话
@@ -65,25 +63,25 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 
 ---
 
-## Milestone 1：Git 仓库管理（Repo 管理）
+## Milestone 1：代码托管平台对接（Provider 管理）
 
 ### 目标
-- 在 Web 上配置和管理多个 Git 仓库
-- 支持仓库认证信息配置
-- 可验证仓库连接有效性
+- 在 Web 上配置和管理 GitLab 平台连接
+- 支持 GitLab 的基础接入
+- 可拉取平台下的仓库列表并验证连接
 
 ### 验收标准
-- Web UI 支持仓库的新增 / 编辑 / 删除
-- 至少支持一种认证方式（推荐 HTTPS + PAT）
-- 后端可实际执行 `git ls-remote` 测试仓库连接
+- Web UI 支持平台连接的新增 / 编辑 / 删除
+- 至少支持一种平台授权方式（推荐 OAuth 或 PAT）
+- 后端可调用平台 API 拉取仓库列表并验证连接
 - 认证信息加密存储，不在接口和日志中明文暴露
 
 ### 主要任务
-- Repo 数据模型设计
-- Repo CRUD API
-- Git 操作封装（测试连接）
+- Provider 数据模型设计
+- Provider CRUD API
+- GitLab API 封装（仓库列表、连接校验）
 - 认证信息加密与解密逻辑
-- 仓库管理 UI 页面
+- GitLab 连接与仓库选择 UI 页面
 
 ---
 
@@ -152,3 +150,23 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - Workspace 回收与 GC 策略
 - 基础安全加固（权限、限流、校验）
 - Docker 运行与部署文档完善
+
+---
+
+## Milestone 5：多平台接入扩展（GitHub / Azure DevOps）
+
+### 目标
+- 在现有 GitLab 接入基础上扩展更多平台
+- 支持 GitHub / Azure DevOps 的平台连接
+- 统一平台抽象与仓库选择体验
+
+### 验收标准
+- Web UI 支持多平台连接的新增 / 编辑 / 删除
+- 支持 GitHub / Azure DevOps 的认证与仓库列表拉取
+- 不同平台的仓库可被统一绑定到会话
+
+### 主要任务
+- Provider 抽象层扩展与适配
+- GitHub API 封装与认证流程
+- Azure DevOps API 封装与认证流程
+- 多平台连接与仓库选择 UI 优化

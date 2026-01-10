@@ -11,6 +11,7 @@ import com.anonysoul.weaver.session.domain.SessionLogRepository
 import com.anonysoul.weaver.session.domain.SessionRepository
 import com.anonysoul.weaver.session.domain.SessionState
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionSynchronization
@@ -28,6 +29,8 @@ class SessionApplicationService(
     private val workspaceProperties: WorkspaceProperties,
     private val sessionInitializer: SessionInitializer
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     fun list(): List<SessionResponse> =
         sessionRepository.findAll().map { it.toResponse() }
 
@@ -45,6 +48,7 @@ class SessionApplicationService(
             throw IllegalArgumentException("Provider type not supported")
         }
 
+        logger.info("Creating session for providerId={}, repoId={}", request.providerId, request.repoId)
         val now = Instant.now()
         val session = Session(
             id = null,
@@ -65,6 +69,7 @@ class SessionApplicationService(
         val workspacePath = Paths.get(workspaceProperties.basePath, session.repoName).toString()
         val updated = sessionRepository.save(saved.withWorkspacePath(workspacePath, Instant.now()))
         appendLog(sessionId, "Session created and queued for initialization.")
+        logger.info("Session created with id={}, workspacePath={}", sessionId, workspacePath)
         TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
             override fun afterCommit() {
                 sessionInitializer.initializeAsync(sessionId)
@@ -79,6 +84,7 @@ class SessionApplicationService(
         sessionRepository.deleteById(id)
         sessionLogRepository.deleteBySessionId(id)
         sessionInitializer.cleanupSession(id)
+        logger.info("Session deleted id={}, repoName={}", id, session.repoName)
     }
 
     private fun validateRequest(request: SessionRequest) {

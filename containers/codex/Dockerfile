@@ -18,6 +18,9 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | b
 COPY root/.zshrc /root/.zshrc
 RUN sed -i -e "s#/bin/bash#/bin/zsh#" /etc/passwd
 
+RUN mkdir -p /root/workspace
+WORKDIR /root/workspace
+
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

@@ -5,6 +5,7 @@ import com.anonysoul.weaver.provider.application.port.GitLabClient
 import com.anonysoul.weaver.provider.application.port.GitLabProject
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.net.URI
 import java.net.http.HttpClient
@@ -16,6 +17,8 @@ import java.time.Duration
 class GitLabApiClient(
     private val objectMapper: ObjectMapper
 ) : GitLabClient {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     private val httpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(10))
         .build()
@@ -32,9 +35,11 @@ class GitLabApiClient(
             if (response.statusCode() in 200..299) {
                 ConnectionTestResult(ok = true, message = "Connection OK")
             } else {
+                logger.warn("GitLab connection test failed with status {}", response.statusCode())
                 ConnectionTestResult(ok = false, message = "GitLab API error: ${response.statusCode()}")
             }
         } catch (ex: Exception) {
+            logger.warn("GitLab connection test failed", ex)
             ConnectionTestResult(ok = false, message = ex.message ?: "GitLab API request failed")
         }
     }
@@ -53,6 +58,7 @@ class GitLabApiClient(
                 .build()
             val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() !in 200..299) {
+                logger.warn("GitLab list projects failed with status {}", response.statusCode())
                 throw IllegalArgumentException("GitLab API error: ${response.statusCode()}")
             }
             val items: List<GitLabProject> = objectMapper.readValue(

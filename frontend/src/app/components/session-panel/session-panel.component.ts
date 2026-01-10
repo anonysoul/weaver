@@ -27,6 +27,7 @@ export class SessionPanelComponent {
   @Output() refreshSessions = new EventEmitter<void>();
   @Output() createSession = new EventEmitter<SessionRequest>();
   @Output() deleteSession = new EventEmitter<SessionResponse>();
+  @Output() viewSession = new EventEmitter<SessionResponse>();
 
   protected selectedProviderId: number | null = null;
   protected selectedRepoId: number | null = null;

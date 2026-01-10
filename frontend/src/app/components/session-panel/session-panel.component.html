@@ -88,6 +88,7 @@
             </p>
           </div>
           <div class="session-actions">
+            <button class="ghost" type="button" (click)="viewSession.emit(session)">详情</button>
             <button class="danger" type="button" (click)="deleteSession.emit(session)">删除</button>
           </div>
         </article>

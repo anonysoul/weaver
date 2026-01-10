@@ -244,6 +244,124 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /sessions/{id}/logs:
+    get:
+      operationId: listSessionLogs
+      summary: List session logs
+      description: 分页返回会话日志，避免单次返回过大负载。
+      tags:
+        - Sessions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: offset
+          in: query
+          required: false
+          description: 从第几条日志开始返回（从 0 开始）。
+          schema:
+            type: integer
+            format: int32
+            default: 0
+            minimum: 0
+        - name: limit
+          in: query
+          required: false
+          description: 单次最多返回的日志条数（最大 1000）。
+          schema:
+            type: integer
+            format: int32
+            default: 1000
+            minimum: 1
+            maximum: 1000
+      responses:
+        "200":
+          description: Session log list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SessionLogResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /sessions/{id}/git:
+    post:
+      operationId: runSessionGitCommand
+      summary: Run git command for session
+      tags:
+        - Sessions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GitCommandRequest"
+      responses:
+        "200":
+          description: Git command result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GitCommandResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /sessions/{id}/context:
+    get:
+      operationId: exportSessionContext
+      summary: Export session context
+      tags:
+        - Sessions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Session context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionContextResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     ProviderRequest:
@@ -395,3 +513,98 @@ components:
         - CREATING
         - READY
         - FAILED
+    SessionLogResponse:
+      type: object
+      required:
+        - id
+        - message
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        message:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    GitCommandType:
+      type: string
+      enum:
+        - STATUS
+        - PULL
+        - CHECKOUT
+    GitCommandRequest:
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          $ref: "#/components/schemas/GitCommandType"
+        branch:
+          type: string
+          nullable: true
+    GitCommandResponse:
+      type: object
+      required:
+        - ok
+        - command
+        - stdout
+        - stderr
+        - message
+      properties:
+        ok:
+          type: boolean
+        command:
+          $ref: "#/components/schemas/GitCommandType"
+        stdout:
+          type: string
+        stderr:
+          type: string
+        message:
+          type: string
+    SessionContextResponse:
+      type: object
+      required:
+        - sessionId
+        - repoName
+        - repoPathWithNamespace
+        - workspacePath
+        - status
+        - branches
+        - gitStatus
+        - directoryTree
+        - generatedAt
+      properties:
+        sessionId:
+          type: integer
+          format: int64
+        repoName:
+          type: string
+        repoPathWithNamespace:
+          type: string
+        workspacePath:
+          type: string
+        status:
+          type: string
+        defaultBranch:
+          type: string
+          nullable: true
+        currentBranch:
+          type: string
+          nullable: true
+        branches:
+          type: array
+          items:
+            type: string
+        gitStatus:
+          type: array
+          items:
+            type: string
+        directoryTree:
+          type: array
+          items:
+            type: string
+        generatedAt:
+          type: string
+          format: date-time

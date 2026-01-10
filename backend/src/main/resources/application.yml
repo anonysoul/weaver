@@ -20,6 +20,8 @@ weaver:
     origins: ${WEAVER_CORS_ORIGINS:http://localhost:4200}
   workspace:
     base-path: ${WEAVER_WORKSPACE_BASE_PATH:/root/workspace}
+  session-logs:
+    base-path: ${WEAVER_SESSION_LOGS_BASE_PATH:./session-logs}
   container:
     image: ${WEAVER_CONTAINER_IMAGE:weaver-codex}
     name-prefix: ${WEAVER_CONTAINER_NAME_PREFIX:weaver-session}

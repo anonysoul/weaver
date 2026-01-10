@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  OnDestroy,
   ViewEncapsulation
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -41,7 +42,7 @@ import { WorkspacePanelComponent } from './components/workspace-panel/workspace-
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class App {
+export class App implements OnDestroy {
   protected providers: ProviderResponse[] = [];
   /**
    * 按连接 ID 缓存 GitLab 仓库列表
@@ -58,6 +59,8 @@ export class App {
   protected sessions: SessionResponse[] = [];
   protected loadingSessions = false;
   protected creatingSession = false;
+  protected activeSession: SessionResponse | null = null;
+  private sessionRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   protected form = {
     name: '',
     baseUrl: 'https://gitlab.com',
@@ -101,15 +104,22 @@ export class App {
     this.loadingSessions = true;
     this.sessionApi.listSessions().subscribe({
       next: (sessions: SessionResponse[]) => {
-        this.sessions = [...sessions].sort(
+        const sorted = [...sessions].sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
+        this.sessions = sorted;
+        if (this.activeSession) {
+          this.activeSession =
+            sorted.find((session) => session.id === this.activeSession?.id) ?? null;
+        }
         this.loadingSessions = false;
+        this.scheduleSessionRefresh(sorted.some((session) => session.status === 'CREATING'));
         this.cdr.markForCheck();
       },
       error: () => {
         this.status = '加载 Session 列表失败';
         this.loadingSessions = false;
+        this.clearSessionRefreshTimer();
         this.cdr.markForCheck();
       }
     });
@@ -264,6 +274,9 @@ export class App {
     this.sessionApi.deleteSession(session.id).subscribe({
       next: () => {
         this.status = 'Session 已删除';
+        if (this.activeSession?.id === session.id) {
+          this.activeSession = null;
+        }
         this.refreshSessions();
         this.cdr.markForCheck();
       },
@@ -273,5 +286,31 @@ export class App {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  viewSession(session: SessionResponse): void {
+    this.activeSession = session;
+    this.cdr.markForCheck();
+  }
+
+  ngOnDestroy(): void {
+    this.clearSessionRefreshTimer();
+  }
+
+  private scheduleSessionRefresh(pending: boolean): void {
+    this.clearSessionRefreshTimer();
+    if (!pending) {
+      return;
+    }
+    this.sessionRefreshTimer = setTimeout(() => {
+      this.refreshSessions();
+    }, 5000);
+  }
+
+  private clearSessionRefreshTimer(): void {
+    if (this.sessionRefreshTimer) {
+      clearTimeout(this.sessionRefreshTimer);
+      this.sessionRefreshTimer = null;
+    }
   }
 }

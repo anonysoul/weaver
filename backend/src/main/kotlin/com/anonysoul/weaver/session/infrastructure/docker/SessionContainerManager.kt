@@ -3,6 +3,8 @@ package com.anonysoul.weaver.session.infrastructure.docker
 import com.anonysoul.weaver.session.application.ContainerProperties
 import com.anonysoul.weaver.session.application.WorkspaceProperties
 import org.springframework.stereotype.Component
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import java.nio.file.Paths
 
 @Component
@@ -60,11 +62,77 @@ class SessionContainerManager(
             containerName,
             "git",
             "-c",
-            "http.extraHeader=PRIVATE-TOKEN: $token",
+            "http.extraHeader=${buildAuthHeader(token)}",
             "clone",
             repoHttpUrl,
             workspacePath(repoName)
         )
         return dockerCommandRunner.run(command)
+    }
+
+    fun gitStatus(containerName: String, repoName: String): DockerCommandRunner.Result =
+        runGitCommand(containerName, repoName, listOf("status", "--short"))
+
+    fun gitCheckout(containerName: String, repoName: String, branch: String): DockerCommandRunner.Result =
+        runGitCommand(containerName, repoName, listOf("checkout", branch))
+
+    fun gitPull(containerName: String, repoName: String, token: String): DockerCommandRunner.Result {
+        val command = listOf(
+            "docker",
+            "exec",
+            "-w",
+            workspacePath(repoName),
+            containerName,
+            "git",
+            "-c",
+            "http.extraHeader=${buildAuthHeader(token)}",
+            "pull"
+        )
+        return dockerCommandRunner.run(command)
+    }
+
+    fun currentBranch(containerName: String, repoName: String): DockerCommandRunner.Result =
+        runGitCommand(containerName, repoName, listOf("rev-parse", "--abbrev-ref", "HEAD"))
+
+    fun listBranches(containerName: String, repoName: String): DockerCommandRunner.Result =
+        runGitCommand(containerName, repoName, listOf("branch", "--list"))
+
+    fun listDirectories(containerName: String, repoName: String): DockerCommandRunner.Result {
+        val command = listOf(
+            "docker",
+            "exec",
+            "-w",
+            workspacePath(repoName),
+            containerName,
+            "find",
+            ".",
+            "-maxdepth",
+            "2",
+            "-type",
+            "d"
+        )
+        return dockerCommandRunner.run(command)
+    }
+
+    private fun runGitCommand(
+        containerName: String,
+        repoName: String,
+        gitArgs: List<String>
+    ): DockerCommandRunner.Result {
+        val command = listOf(
+            "docker",
+            "exec",
+            "-w",
+            workspacePath(repoName),
+            containerName,
+            "git"
+        ) + gitArgs
+        return dockerCommandRunner.run(command)
+    }
+
+    private fun buildAuthHeader(token: String): String {
+        val payload = "oauth2:$token"
+        val encoded = Base64.getEncoder().encodeToString(payload.toByteArray(StandardCharsets.UTF_8))
+        return "Authorization: Basic $encoded"
     }
 }

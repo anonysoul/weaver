@@ -25,6 +25,7 @@
 - Kotlin：4 空格缩进，类用 `PascalCase`，函数/变量用 `camelCase`，文件路径与包名对齐。
 - TypeScript/Angular：遵循 Angular CLI 默认规范，生成文件使用 `kebab-case`，组件类使用 `PascalCase`。
 - 格式化：前端使用 `frontend/package.json` 中的 Prettier（单引号，行宽 100）。
+- 注释：新增或修改注释时使用中文。
 
 ## 测试指南
 - 后端：Spring Boot + JUnit；测试放在 `backend/src/test/kotlin`，命名为 `*Test.kt`。

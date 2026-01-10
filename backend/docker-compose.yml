@@ -4,10 +4,12 @@ services:
     working_dir: /workspace
     volumes:
       - ./:/workspace
+      - ./session-logs:/workspace/session-logs
       - gradle_cache:/home/gradle/.gradle
     environment:
       WEAVER_DB_URL: jdbc:sqlite:/workspace/weaver.db
       WEAVER_PORT: 8080
+      WEAVER_SESSION_LOGS_BASE_PATH: /workspace/session-logs
     ports:
       - "8080:8080"
     command: ["./gradlew", "bootRun"]

@@ -5,22 +5,135 @@
       <h3>Workspace 运行与日志控制</h3>
       <p class="panel-subtitle">围绕 Session 展示目录、日志与受控 Git 操作。</p>
     </div>
+    <button class="ghost" type="button" (click)="refreshLogs()" [disabled]="!session || loadingLogs">
+      {{ loadingLogs ? '加载中' : '刷新日志' }}
+    </button>
   </div>
-  <div class="panel-body placeholder-grid">
+  <div class="workspace-grid" *ngIf="session; else workspaceEmpty">
     <div class="card">
-      <p class="card-kicker">Layout</p>
-      <h4>目录结构</h4>
-      <p class="muted">统一指向 `/data/weaver/workspaces/&#123;sessionId&#125;` 目录。</p>
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Session</p>
+          <h4>会话信息</h4>
+        </div>
+        <span class="badge">{{ session.status }}</span>
+      </div>
+      <div class="stack">
+        <p class="mono">{{ session.repoPathWithNamespace }}</p>
+        <p class="muted">Workspace：{{ session.workspacePath || '准备中' }}</p>
+        <p class="muted">更新时间：{{ session.updatedAt | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+        <p class="warning" *ngIf="session.errorMessage">{{ session.errorMessage }}</p>
+      </div>
     </div>
+
     <div class="card">
-      <p class="card-kicker">Logs</p>
-      <h4>执行日志</h4>
-      <p class="muted">查询 Session 初始化与任务日志，支持筛选导出。</p>
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Logs</p>
+          <h4>执行日志</h4>
+        </div>
+        <span class="badge">已加载 {{ logs.length }} 条</span>
+      </div>
+      <div class="log-list" *ngIf="logs.length; else logEmpty">
+        <div class="log-item" *ngFor="let log of logs">
+          <p class="mono">{{ log.message }}</p>
+          <p class="muted">{{ log.createdAt | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+        </div>
+      </div>
+      <button
+        class="ghost"
+        type="button"
+        (click)="loadMoreLogs()"
+        *ngIf="session && hasMoreLogs"
+        [disabled]="loadingLogs"
+      >
+        {{ loadingLogs ? '加载中' : '加载更多' }}
+      </button>
+      <ng-template #logEmpty>
+        <p class="muted">{{ loadingLogs ? '加载日志中...' : '暂无日志' }}</p>
+      </ng-template>
     </div>
+
     <div class="card">
-      <p class="card-kicker">Git Guard</p>
-      <h4>受控 Git 操作</h4>
-      <p class="muted">提供 pull / status / checkout 白名单指令入口。</p>
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Git Guard</p>
+          <h4>受控 Git 操作</h4>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="git-actions">
+          <button
+            class="ghost"
+            type="button"
+            (click)="runStatus()"
+            [disabled]="runningGit || session.status !== 'READY'"
+          >
+            状态
+          </button>
+          <button
+            class="ghost"
+            type="button"
+            (click)="runPull()"
+            [disabled]="runningGit || session.status !== 'READY'"
+          >
+            拉取
+          </button>
+        </div>
+        <label>
+          Checkout 分支
+          <div class="inline-form">
+            <input
+              type="text"
+              [(ngModel)]="checkoutBranch"
+              placeholder="例如 main 或 feature/ui"
+              [ngModelOptions]="{ standalone: true }"
+            />
+            <button
+              class="primary"
+              type="button"
+              (click)="runCheckout()"
+              [disabled]="runningGit || session.status !== 'READY'"
+            >
+              切换
+            </button>
+          </div>
+        </label>
+        <p class="warning" *ngIf="gitError">{{ gitError }}</p>
+        <p class="muted" *ngIf="session.status !== 'READY'">Session 未就绪，暂不可执行 Git 操作。</p>
+        <div class="terminal" *ngIf="gitResult">
+          <p class="terminal-title">{{ gitResult.command }} · {{ gitResult.ok ? 'OK' : 'Failed' }}</p>
+          <pre>{{ gitResult.stdout || gitResult.stderr || gitResult.message }}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <p class="card-kicker">Context</p>
+          <h4>会话上下文导出</h4>
+        </div>
+        <button
+          class="ghost"
+          type="button"
+          (click)="exportContext()"
+          [disabled]="loadingContext || session.status !== 'READY'"
+        >
+          {{ loadingContext ? '导出中' : '生成摘要' }}
+        </button>
+      </div>
+      <div class="context-box" *ngIf="context; else contextEmpty">
+        <pre>{{ context | json }}</pre>
+      </div>
+      <ng-template #contextEmpty>
+        <p class="muted">暂未导出上下文。</p>
+      </ng-template>
     </div>
   </div>
+  <ng-template #workspaceEmpty>
+    <div class="empty">
+      <p>请选择一个 Session 查看日志与 Git 操作。</p>
+    </div>
+  </ng-template>
 </section>

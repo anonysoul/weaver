@@ -10,6 +10,7 @@ import com.anonysoul.weaver.provider.application.port.TokenCipher
 import com.anonysoul.weaver.provider.domain.Provider
 import com.anonysoul.weaver.provider.domain.ProviderRepository
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -20,6 +21,8 @@ class ProviderApplicationService(
     private val tokenCipher: TokenCipher,
     private val gitLabClient: GitLabClient
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     fun list(): List<ProviderResponse> =
         providerRepository.findAll().map { it.toResponse() }
 
@@ -35,7 +38,9 @@ class ProviderApplicationService(
             createdAt = now,
             updatedAt = now
         )
-        return providerRepository.save(provider).toResponse()
+        val saved = providerRepository.save(provider)
+        logger.info("Provider created id={}, type={}", saved.id, saved.type)
+        return saved.toResponse()
     }
 
     @Transactional
@@ -47,7 +52,9 @@ class ProviderApplicationService(
             encryptedToken = tokenCipher.encrypt(request.token.trim()),
             updatedAt = Instant.now()
         )
-        return providerRepository.save(updated).toResponse()
+        val saved = providerRepository.save(updated)
+        logger.info("Provider updated id={}", saved.id)
+        return saved.toResponse()
     }
 
     @Transactional
@@ -56,6 +63,7 @@ class ProviderApplicationService(
             throw EntityNotFoundException("Provider not found")
         }
         providerRepository.deleteById(id)
+        logger.info("Provider deleted id={}", id)
     }
 
     @Transactional(readOnly = true)
@@ -63,6 +71,7 @@ class ProviderApplicationService(
         val provider = providerRepository.findById(id) ?: throw EntityNotFoundException("Provider not found")
         val token = tokenCipher.decrypt(provider.encryptedToken)
         val result = gitLabClient.testConnection(provider.baseUrl, token)
+        logger.info("Provider connection test id={}, ok={}", id, result.ok)
         return ConnectionTestResponse(ok = result.ok, message = result.message)
     }
 
@@ -70,7 +79,7 @@ class ProviderApplicationService(
     fun listRepos(id: Long): List<GitLabRepoResponse> {
         val provider = providerRepository.findById(id) ?: throw EntityNotFoundException("Provider not found")
         val token = tokenCipher.decrypt(provider.encryptedToken)
-        return gitLabClient.listProjects(provider.baseUrl, token)
+        val repos = gitLabClient.listProjects(provider.baseUrl, token)
             .map {
                 GitLabRepoResponse(
                     id = it.id,
@@ -81,6 +90,8 @@ class ProviderApplicationService(
                     httpUrlToRepo = it.httpUrlToRepo
                 )
             }
+        logger.info("Provider repos listed id={}, count={}", id, repos.size)
+        return repos
     }
 
     private fun Provider.toResponse(): ProviderResponse =

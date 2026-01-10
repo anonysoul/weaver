@@ -2,11 +2,44 @@
   "name": "weaver",
   "version": "0.0.0",
   "scripts": {
-    "ng": "ng",
-    "start": "ng serve --port 8765",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "ng": "wireit",
+    "openapi-generate": "wireit",
+    "start": "wireit",
+    "build": "wireit",
+    "watch": "wireit",
+    "test": "wireit"
+  },
+  "wireit": {
+    "ng": {
+      "command": "ng"
+    },
+    "openapi-generate": {
+      "command": "openapi-generator-cli generate -i ../backend/src/main/resources/openapi/openapi.yaml -g typescript-angular -o src/app/core/openapi --additional-properties stringEnums=true,fileNaming=kebab-case,enumPropertyNaming=UPPERCASE,withInterfaces=true,supportsES6=true,configurationPrefix=OpenApi,ngVersion=21.0.0,providedInRoot=true"
+    },
+    "start": {
+      "command": "ng serve --port 8765",
+      "dependencies": [
+        "openapi-generate"
+      ]
+    },
+    "build": {
+      "command": "ng build",
+      "dependencies": [
+        "openapi-generate"
+      ]
+    },
+    "watch": {
+      "command": "ng build --watch --configuration development",
+      "dependencies": [
+        "openapi-generate"
+      ]
+    },
+    "test": {
+      "command": "ng test",
+      "dependencies": [
+        "openapi-generate"
+      ]
+    }
   },
   "prettier": {
     "printWidth": 100,
@@ -36,9 +69,11 @@
     "@angular/build": "^21.0.5",
     "@angular/cli": "^21.0.5",
     "@angular/compiler-cli": "^21.0.0",
+    "@openapitools/openapi-generator-cli": "^2.18.4",
     "jsdom": "^27.1.0",
     "less": "^4.2.0",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "wireit": "^0.9.5"
   }
 }

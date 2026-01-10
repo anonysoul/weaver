@@ -1,0 +1,199 @@
+openapi: "3.0.2"
+info:
+  title: Weaver API
+  version: "0.0.1"
+  description: Repository management APIs.
+servers:
+  - url: /
+paths:
+  /api/repos:
+    get:
+      operationId: listRepos
+      summary: List repositories
+      responses:
+        "200":
+          description: Repository list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RepoResponse"
+    post:
+      operationId: createRepo
+      summary: Create repository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepoRequest"
+      responses:
+        "201":
+          description: Repository created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepoResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/repos/{id}:
+    put:
+      operationId: updateRepo
+      summary: Update repository
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepoRequest"
+      responses:
+        "200":
+          description: Repository updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepoResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Repository not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteRepo
+      summary: Delete repository
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Repository deleted
+        "404":
+          description: Repository not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/repos/{id}/test:
+    post:
+      operationId: testRepoConnection
+      summary: Test repository connection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Connection test result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionTestResponse"
+        "404":
+          description: Repository not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    RepoRequest:
+      type: object
+      required:
+        - name
+        - url
+        - defaultBranch
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        defaultBranch:
+          type: string
+        credential:
+          $ref: "#/components/schemas/CredentialRequest"
+    CredentialRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: "#/components/schemas/CredentialType"
+        username:
+          type: string
+          nullable: true
+        token:
+          type: string
+          nullable: true
+    RepoResponse:
+      type: object
+      required:
+        - id
+        - name
+        - url
+        - defaultBranch
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        url:
+          type: string
+        defaultBranch:
+          type: string
+        credentialType:
+          $ref: "#/components/schemas/CredentialType"
+          nullable: true
+    ConnectionTestResponse:
+      type: object
+      required:
+        - ok
+        - message
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+    CredentialType:
+      type: string
+      enum:
+        - HTTPS_PAT

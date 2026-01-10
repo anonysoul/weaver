@@ -1,0 +1,16 @@
+services:
+  backend:
+    image: gradle:8.7-jdk21
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+      - gradle_cache:/home/gradle/.gradle
+    environment:
+      WEAVER_DB_URL: jdbc:sqlite:/workspace/weaver.db
+      WEAVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    command: ["./gradlew", "bootRun"]
+
+volumes:
+  gradle_cache:

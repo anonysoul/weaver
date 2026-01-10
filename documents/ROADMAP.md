@@ -14,7 +14,8 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 技术栈：
 - 后端：Kotlin（Spring Boot）
 - 前端：Angular
-- 数据库：PostgreSQL
+- 数据库：SQLite
+- 接口与规范：OpenAPI（后端提供 spec，前端基于 spec 生成类型与客户端）
 
 ---
 
@@ -55,7 +56,7 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - 基础日志、配置加载正常
 
 ### 主要任务
-- 技术栈落地（Kotlin / Angular / PostgreSQL）
+- 技术栈落地（Kotlin / Angular / SQLite）
 - 初始化项目目录结构
 - 编写 Dockerfile（单镜像）
 - 基础 Web 页面与 API 服务

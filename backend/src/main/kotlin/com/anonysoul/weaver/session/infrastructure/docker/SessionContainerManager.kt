@@ -355,10 +355,9 @@ class SessionContainerManager(
             listOf(
                 "docker",
                 "ps",
+                "-a",
                 "--filter",
                 "label=weaver.sessionId",
-                "--filter",
-                "status=running",
                 "--format",
                 "{{.Ports}}",
             )

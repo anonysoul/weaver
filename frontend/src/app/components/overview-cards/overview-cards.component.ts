@@ -60,7 +60,6 @@ export class OverviewCardsComponent {
   ];
 
   private readonly sessionCatalog: Omit<SessionStat, 'count'>[] = [
-    { status: SessionStatus.CREATING, label: '启动中', tone: 'creating' },
     { status: SessionStatus.READY, label: '已就绪', tone: 'ready' },
     { status: SessionStatus.STOPPED, label: '已停止', tone: 'stopped' },
     { status: SessionStatus.FAILED, label: '失败', tone: 'failed' },

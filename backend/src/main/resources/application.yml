@@ -23,7 +23,7 @@ weaver:
   session-logs:
     base-path: ${WEAVER_SESSION_LOGS_BASE_PATH:./session-logs}
   container:
-    image: ${WEAVER_CONTAINER_IMAGE:weaver-codex}
+    image: ${WEAVER_CONTAINER_IMAGE:anonysoul/weaver-workspace-codex:1.0}
     name-prefix: ${WEAVER_CONTAINER_NAME_PREFIX:weaver-session}
     data-volume: ${WEAVER_CONTAINER_DATA_VOLUME:weaver-data}
     data-mount-path: ${WEAVER_CONTAINER_DATA_MOUNT_PATH:/data}

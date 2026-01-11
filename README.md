@@ -4,6 +4,20 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，提�
 
 Codex 登录支持 `codex login --device-auth`，并且需要在网页上（https://auth.openai.com/codex/device）开启“为 Codex 启用设备代码授权”。
 
+## 镜像交付
+
+- Weaver 镜像：`anonysoul/weaver:1.0`
+- Codex 镜像：`anonysoul/weaver-workspace-codex:1.0`
+
+构建：
+
+```bash
+docker build -t anonysoul/weaver:1.0 .
+docker build -t anonysoul/weaver-workspace-codex:1.0 containers/codex
+```
+
+运行与部署说明见 `documents/DEPLOYMENT.md`。
+
 ## 路线图
 
 详见 `documents/ROADMAP.md`。

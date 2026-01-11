@@ -5,37 +5,37 @@
 ## 构建
 
 ```bash
-docker build -t weaver-codex containers/codex
+docker build -t anonysoul/weaver-workspace-codex:1.0 containers/codex
 ```
 
 指定 Node 版本：
 
 ```bash
-docker build --build-arg NODE_VERSION=18 -t weaver-codex containers/codex
+docker build --build-arg NODE_VERSION=18 -t anonysoul/weaver-workspace-codex:1.0 containers/codex
 ```
 
 ## 运行
 
 ```bash
-docker run -it weaver-codex zsh
+docker run -it anonysoul/weaver-workspace-codex:1.0 zsh
 ```
 
 运行时覆盖 Node 版本（容器启动时自动安装并切换）：
 
 ```bash
-docker run -e NODE_VERSION=22 -it weaver-codex zsh
+docker run -e NODE_VERSION=22 -it anonysoul/weaver-workspace-codex:1.0 zsh
 ```
 
 暴露 VSCode Web 端口（容器内默认 8080，可按需映射宿主端口）：
 
 ```bash
-docker run -p 0:8080 -it weaver-codex zsh
+docker run -p 0:8080 -it anonysoul/weaver-workspace-codex:1.0 zsh
 ```
 
 指定固定宿主端口：
 
 ```bash
-docker run -p 62000:8080 -it weaver-codex zsh
+docker run -p 62000:8080 -it anonysoul/weaver-workspace-codex:1.0 zsh
 ```
 
 ## 说明

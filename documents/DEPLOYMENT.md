@@ -1,5 +1,12 @@
 # Weaver 运行与部署说明
 
+## 镜像构建
+
+```bash
+docker build -t anonysoul/weaver:1.0 .
+docker build -t anonysoul/weaver-workspace-codex:1.0 containers/codex
+```
+
 ## Docker 运行
 
 示例：
@@ -7,11 +14,11 @@
 ```bash
 docker run --rm -p 8080:8080 \
   -e WEAVER_DB_URL=jdbc:sqlite:/data/weaver.db \
-  -e WEAVER_CONTAINER_IMAGE=weaver-codex \
+  -e WEAVER_CONTAINER_IMAGE=anonysoul/weaver-workspace-codex:1.0 \
   -e WEAVER_CONTAINER_DATA_VOLUME=weaver-data \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v weaver-data:/data \
-  weaver:latest
+  anonysoul/weaver:1.0
 ```
 
 说明：

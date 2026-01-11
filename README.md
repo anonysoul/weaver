@@ -6,14 +6,14 @@ Codex 登录支持 `codex login --device-auth`，并且需要在网页上（http
 
 ## 镜像交付
 
-- Weaver 镜像：`anonysoul/weaver:1.0`
-- Codex 镜像：`anonysoul/weaver-workspace-codex:1.0`
+- Weaver 镜像：`anonysoul/weaver:latest`
+- Codex 镜像：`anonysoul/weaver-workspace-codex:latest`
 
 构建：
 
 ```bash
-docker build -t anonysoul/weaver:1.0 .
-docker build -t anonysoul/weaver-workspace-codex:1.0 containers/codex
+docker build -t anonysoul/weaver:latest .
+docker build -t anonysoul/weaver-workspace-codex:latest containers/codex
 ```
 
 运行与部署说明见 `documents/DEPLOYMENT.md`。

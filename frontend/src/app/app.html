@@ -1,164 +1,30 @@
-<div class="weaver-shell">
-  <app-sidebar [providersCount]="providers.length" [repoCount]="repoCount"></app-sidebar>
+<div class="app-shell">
+  <app-side-nav [items]="menuItems"></app-side-nav>
 
-  <main class="main">
-    <app-topbar
-      [loadingProviders]="loadingProviders"
-      (refresh)="refresh()"
-      (startCreate)="startCreate()"
-    ></app-topbar>
+  <div class="app-main">
+    <header class="app-header">
+      <div>
+        <div class="header-title">Weaver Control Center</div>
+        <div class="header-subtitle">面向 AI 会话的仓库与容器编排平台</div>
+      </div>
+    </header>
 
-    <section class="mission reveal" id="dashboard" style="--delay: 0.05s">
-      <div class="mission-copy">
-        <p class="mission-kicker">Weaver Roadmap · Milestone 1-2</p>
-        <h2>将 AI 编码会话编排为可控的仓库与工作区流程</h2>
-        <p class="mission-subtitle">
-          通过 Docker 单镜像运行的管理台，聚焦 Provider、Repository、Session、Workspace 全链路。
-        </p>
-        <div class="mission-tags">
-          <span class="tag">Docker 镜像交付</span>
-          <span class="tag">GitLab 接入</span>
-          <span class="tag">会话隔离</span>
-          <span class="tag">Workspace 管理</span>
-        </div>
-      </div>
-      <div class="mission-console">
-        <div class="console-card">
-          <p class="console-title">核心概念</p>
-          <ul>
-            <li>Provider：平台连接与凭据管理</li>
-            <li>Repository：按连接聚合远程仓库</li>
-            <li>Session：单仓库、多会话隔离</li>
-            <li>Workspace：会话对应的本地工作目录</li>
-          </ul>
-        </div>
-        <div class="console-card console-highlight">
-          <p class="console-title">实时状态</p>
-          <div class="console-metrics">
-            <div>
-              <p class="metric-label">Providers</p>
-              <p class="metric-value">{{ providers.length }}</p>
-            </div>
-            <div>
-              <p class="metric-label">Repo Catalog</p>
-              <p class="metric-value">{{ totalRepoCount }}</p>
-            </div>
-            <div>
-              <p class="metric-label">Active Sessions</p>
-              <p class="metric-value">{{ sessions.length }}</p>
-            </div>
-          </div>
-          <p class="console-footnote">当前支持 GitLab，后续扩展 GitHub / Azure DevOps。</p>
-        </div>
-      </div>
+    <section id="section-overview" class="app-section">
+      <app-overview-cards [providers]="providers()" [sessions]="sessions()"></app-overview-cards>
     </section>
 
-    <p class="global-status" *ngIf="status">{{ status }}</p>
-
-    <section class="section-block reveal" id="providers" style="--delay: 0.1s">
-      <div class="section-head">
-        <div>
-          <p class="section-kicker">Milestone 1</p>
-          <h3 class="section-title">Provider 连接管理</h3>
-          <p class="section-subtitle">建立 GitLab 连接，校验凭据并加密存储，为仓库同步打基础。</p>
-        </div>
-      </div>
-      <app-provider-panel
-        [providers]="providers"
-        [loadingProviders]="loadingProviders"
-        [showForm]="showForm"
-        [editingId]="editingId"
-        [form]="form"
-        (startCreate)="startCreate()"
-        (save)="save()"
-        (startEdit)="startEdit($event)"
-        (test)="test($event)"
-        (remove)="remove($event)"
-      ></app-provider-panel>
+    <section id="section-providers" class="app-section">
+      <app-providers-panel (providersUpdated)="onProvidersUpdated($event)"></app-providers-panel>
     </section>
 
-    <section class="section-block reveal" id="repositories" style="--delay: 0.15s">
-      <div class="section-head">
-        <div>
-          <p class="section-kicker">Milestone 1</p>
-          <h3 class="section-title">仓库目录与绑定入口</h3>
-          <p class="section-subtitle">拉取仓库清单，为 Session 选择与初始化提供入口。</p>
-        </div>
-      </div>
-      <app-repo-catalog
-        [providers]="providers"
-        [repos]="repos"
-        [loadingRepos]="loadingRepos"
-        (loadRepos)="loadRepos($event)"
-      ></app-repo-catalog>
+    <section id="section-sessions" class="app-section">
+      <app-sessions-panel
+        [providers]="providers()"
+        (sessionsUpdated)="onSessionsUpdated($event)"
+      ></app-sessions-panel>
     </section>
+  </div>
 
-    <section class="section-block reveal" id="sessions" style="--delay: 0.2s">
-      <div class="section-head">
-        <div>
-          <p class="section-kicker">Milestone 2</p>
-          <h3 class="section-title">Codex Session 管理</h3>
-          <p class="section-subtitle">为同一仓库创建多个会话，追踪状态与初始化日志。</p>
-        </div>
-      </div>
-      <app-session-panel
-        [providers]="providers"
-        [repos]="repos"
-        [sessions]="sessions"
-        [loadingSessions]="loadingSessions"
-        [creatingSession]="creatingSession"
-        (refreshSessions)="refreshSessions()"
-        (createSession)="createSession($event)"
-        (deleteSession)="deleteSession($event)"
-        (viewSession)="viewSession($event)"
-      ></app-session-panel>
-    </section>
-
-    <section class="section-block reveal" id="workspaces" style="--delay: 0.25s">
-      <div class="section-head">
-        <div>
-          <p class="section-kicker">Milestone 2-3</p>
-          <h3 class="section-title">Workspace 与日志能力</h3>
-          <p class="section-subtitle">展示 workspace 路径、日志流与受控 Git 操作入口。</p>
-        </div>
-      </div>
-      <app-workspace-panel [session]="activeSession"></app-workspace-panel>
-    </section>
-
-    <section class="section-block reveal" id="milestones" style="--delay: 0.3s">
-      <div class="section-head">
-        <div>
-          <p class="section-kicker">Roadmap</p>
-          <h3 class="section-title">里程碑推进节奏</h3>
-          <p class="section-subtitle">从平台接入到多平台扩展，逐步完善会话与资源管理。</p>
-        </div>
-      </div>
-      <div class="roadmap">
-        <article class="roadmap-item">
-          <p class="roadmap-title">Milestone 0</p>
-          <p class="roadmap-text">单镜像可运行基础与浏览器访问。</p>
-        </article>
-        <article class="roadmap-item">
-          <p class="roadmap-title">Milestone 1</p>
-          <p class="roadmap-text">Provider 管理、仓库列表与连接校验。</p>
-        </article>
-        <article class="roadmap-item">
-          <p class="roadmap-title">Milestone 2</p>
-          <p class="roadmap-text">Session + Workspace 创建与状态跟踪。</p>
-        </article>
-        <article class="roadmap-item">
-          <p class="roadmap-title">Milestone 3</p>
-          <p class="roadmap-text">会话日志、Git 操作与上下文导出。</p>
-        </article>
-        <article class="roadmap-item">
-          <p class="roadmap-title">Milestone 4</p>
-          <p class="roadmap-text">并发隔离、清理与稳定性增强。</p>
-        </article>
-        <article class="roadmap-item">
-          <p class="roadmap-title">Milestone 5</p>
-          <p class="roadmap-text">扩展 GitHub / Azure DevOps 平台。</p>
-        </article>
-      </div>
-    </section>
-  </main>
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
 </div>

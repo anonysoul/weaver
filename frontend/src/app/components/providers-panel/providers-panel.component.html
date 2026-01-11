@@ -1,0 +1,128 @@
+<p-card class="panel-card">
+  <ng-template pTemplate="title">平台接入</ng-template>
+  <ng-template pTemplate="subtitle">配置代码托管平台接入，验证访问权限。</ng-template>
+  <ng-template pTemplate="content">
+    <p-toolbar styleClass="panel-toolbar">
+      <div class="p-toolbar-group-left">
+        <button
+          pButton
+          type="button"
+          icon="pi pi-plus"
+          label="新增接入"
+          (click)="openCreate()"
+        ></button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-refresh"
+          label="刷新"
+          class="p-button-text"
+          (click)="loadProviders()"
+        ></button>
+      </div>
+    </p-toolbar>
+
+    <p-table [value]="providers()" [loading]="loading()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>名称</th>
+          <th>类型</th>
+          <th>Base URL</th>
+          <th>操作</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-provider>
+        <tr>
+          <td>
+            <div class="provider-name">{{ provider.name }}</div>
+          </td>
+          <td>
+            <p-tag [value]="provider.type" severity="info"></p-tag>
+          </td>
+          <td class="muted">{{ provider.baseUrl }}</td>
+          <td>
+            <div class="table-actions">
+              <button
+                pButton
+                type="button"
+                icon="pi pi-bolt"
+                class="p-button-text"
+                (click)="testConnection(provider)"
+              ></button>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-pencil"
+                class="p-button-text"
+                (click)="openEdit(provider)"
+              ></button>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-trash"
+                class="p-button-text p-button-danger"
+                (click)="confirmDelete(provider)"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4" class="empty-cell">暂无平台接入，请先创建。</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </ng-template>
+</p-card>
+
+<p-dialog
+  header="平台接入配置"
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '420px' }"
+>
+  <div class="dialog-body p-fluid">
+    <label>平台类型</label>
+    <p-select
+      [options]="providerOptions"
+      [(ngModel)]="formState.type"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="选择平台"
+      (onChange)="onTypeChange($event.value)"
+    ></p-select>
+
+    <label>地址</label>
+    <input pInputText [(ngModel)]="formState.baseUrl" [placeholder]="baseUrlPlaceholder" />
+
+    <label>账号</label>
+    <input pInputText [(ngModel)]="formState.name" [placeholder]="accountPlaceholder" />
+
+    <label class="token-label">
+      访问令牌
+      <a class="token-link" [href]="getAccessTokenUrl()" target="_blank" rel="noopener"
+        >如何获取？</a
+      >
+    </label>
+    <p-password
+      [(ngModel)]="formState.token"
+      [toggleMask]="true"
+      [feedback]="false"
+      [placeholder]="tokenPlaceholder"
+    ></p-password>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="取消"
+      class="p-button-text"
+      (click)="dialogVisible.set(false)"
+    ></button>
+    <button pButton type="button" label="保存" (click)="saveProvider()"></button>
+  </ng-template>
+</p-dialog>

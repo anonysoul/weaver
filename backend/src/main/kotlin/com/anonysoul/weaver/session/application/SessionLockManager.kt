@@ -11,7 +11,10 @@ class SessionLockManager {
     /**
      * 会话级互斥，保证初始化与运行操作不并发互相干扰
      */
-    fun <T> withLock(sessionId: Long, action: () -> T): T {
+    fun <T> withLock(
+        sessionId: Long,
+        action: () -> T,
+    ): T {
         val lock = locks.computeIfAbsent(sessionId) { ReentrantLock() }
         lock.lock()
         try {

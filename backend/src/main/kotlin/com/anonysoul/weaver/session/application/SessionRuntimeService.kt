@@ -1,7 +1,9 @@
 package com.anonysoul.weaver.session.application
 
+import com.anonysoul.weaver.provider.application.ProviderAuthSupport
 import com.anonysoul.weaver.provider.application.port.TokenCipher
 import com.anonysoul.weaver.provider.domain.ProviderRepository
+import com.anonysoul.weaver.provider.SessionResponse
 import com.anonysoul.weaver.session.domain.SessionLog
 import com.anonysoul.weaver.session.domain.SessionLogRepository
 import com.anonysoul.weaver.session.domain.SessionRepository
@@ -28,6 +30,7 @@ class SessionRuntimeService(
     private val sessionContainerManager: SessionContainerManager,
     private val sessionLockManager: SessionLockManager,
     private val sessionRateLimiter: SessionRateLimiter,
+    private val sessionResponseMapper: SessionResponseMapper,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -51,7 +54,6 @@ class SessionRuntimeService(
                 safeLimit,
             )
         }
-        logger.info("Listing logs for sessionId={} offset={} limit={}", sessionId, safeOffset, safeLimit)
         return sessionLogRepository.findBySessionId(sessionId, safeOffset, safeLimit).map { log ->
             SessionLogResponse(
                 id = log.id ?: 0L,
@@ -64,8 +66,8 @@ class SessionRuntimeService(
     fun runGitCommand(
         sessionId: Long,
         request: GitCommandRequest,
-    ): GitCommandResponse {
-        return sessionLockManager.withLock(sessionId) {
+    ): GitCommandResponse =
+        sessionLockManager.withLock(sessionId) {
             sessionRateLimiter.check(sessionId)
             val session = sessionRepository.findById(sessionId) ?: throw EntityNotFoundException("Session not found")
             ensureSessionReady(sessionId, session.status)
@@ -91,8 +93,9 @@ class SessionRuntimeService(
                             providerRepository.findById(session.providerId)
                                 ?: throw EntityNotFoundException("Provider not found")
                         val token = tokenCipher.decrypt(provider.encryptedToken)
+                        val authUser = ProviderAuthSupport.authUser(provider.type)
                         tokenForSanitize = token
-                        sessionContainerManager.gitPull(containerName, repoName, token)
+                        sessionContainerManager.gitPull(containerName, repoName, token, authUser)
                     }
                 }
             val ok = result.exitCode == 0
@@ -114,10 +117,9 @@ class SessionRuntimeService(
                 message = message,
             )
         }
-    }
 
-    fun exportContext(sessionId: Long): SessionContextResponse {
-        return sessionLockManager.withLock(sessionId) {
+    fun exportContext(sessionId: Long): SessionContextResponse =
+        sessionLockManager.withLock(sessionId) {
             sessionRateLimiter.check(sessionId)
             val session = sessionRepository.findById(sessionId) ?: throw EntityNotFoundException("Session not found")
             ensureSessionReady(sessionId, session.status)
@@ -172,7 +174,37 @@ class SessionRuntimeService(
                 generatedAt = OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC),
             )
         }
-    }
+
+    fun startContainer(sessionId: Long): SessionResponse =
+        sessionLockManager.withLock(sessionId) {
+            sessionRateLimiter.check(sessionId)
+            val session = sessionRepository.findById(sessionId) ?: throw EntityNotFoundException("Session not found")
+            ensureSessionReady(sessionId, session.status)
+            val currentState = sessionContainerManager.resolveContainerState(sessionId)
+            if (currentState == SessionContainerManager.ContainerState.RUNNING) {
+                return@withLock sessionResponseMapper.toResponse(session, currentState)
+            }
+            if (currentState == null) {
+                appendLog(sessionId, "会话容器不存在，无法启动。")
+                throw IllegalArgumentException("Session container not found")
+            }
+            logger.info("Starting session container for sessionId={}", sessionId)
+            val startResult = sessionContainerManager.startContainer(sessionId)
+            if (startResult.exitCode != 0) {
+                val errorMessage = startResult.stderr.trim().ifBlank { "Failed to start container" }
+                appendLog(sessionId, "容器启动失败：$errorMessage")
+                throw IllegalArgumentException(errorMessage)
+            }
+            val containerName = sessionContainerManager.containerName(sessionId)
+            val vscodeResult = sessionContainerManager.startCodeServer(containerName, session.repoName)
+            if (vscodeResult.exitCode != 0) {
+                val errorMessage = vscodeResult.stderr.trim().ifBlank { "Failed to start code-server" }
+                appendLog(sessionId, "VSCode 服务启动失败：$errorMessage")
+                throw IllegalArgumentException(errorMessage)
+            }
+            appendLog(sessionId, "会话容器已启动。")
+            sessionResponseMapper.toResponse(session, SessionContainerManager.ContainerState.RUNNING)
+        }
 
     private fun ensureSessionExists(sessionId: Long) {
         if (!sessionRepository.existsById(sessionId)) {

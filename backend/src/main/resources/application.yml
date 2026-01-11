@@ -41,3 +41,7 @@ weaver:
       enabled: ${WEAVER_SESSION_CLEANUP_ENABLED:true}
       fixed-delay-millis: ${WEAVER_SESSION_CLEANUP_FIXED_DELAY_MILLIS:600000}
       log-retention-days: ${WEAVER_SESSION_LOG_RETENTION_DAYS:7}
+  vscode:
+    enabled: ${WEAVER_VSCODE_ENABLED:true}
+    internal-port: ${WEAVER_VSCODE_INTERNAL_PORT:8080}
+    base-url: ${WEAVER_VSCODE_BASE_URL:http://localhost}

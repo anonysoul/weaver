@@ -1,1 +1,33 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'primeicons/primeicons.css';
+
+:root {
+  --surface-soft: #f4f7f5;
+  --ink: #102029;
+  --accent: #27c1b5;
+  --accent-dark: #1b7ea9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Avenir Next', 'Futura', 'Trebuchet MS', 'Segoe UI', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(39, 193, 181, 0.15), transparent 45%),
+    radial-gradient(circle at 30% 40%, rgba(18, 126, 169, 0.1), transparent 50%), #f4f7f5;
+}
+
+p-card {
+  box-shadow: 0 24px 40px rgba(15, 23, 42, 0.08);
+}
+
+.p-button {
+  border-radius: 10px;
+}
+
+.p-dialog {
+  border-radius: 16px;
+}

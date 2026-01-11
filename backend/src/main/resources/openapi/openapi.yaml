@@ -362,6 +362,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /sessions/{id}/container/start:
+    post:
+      operationId: startSessionContainer
+      summary: Start session container
+      tags:
+        - Sessions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Session container started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     ProviderRequest:
@@ -370,6 +402,7 @@ components:
         - name
         - baseUrl
         - token
+        - type
       properties:
         name:
           type: string
@@ -377,6 +410,8 @@ components:
           type: string
         token:
           type: string
+        type:
+          $ref: "#/components/schemas/ProviderType"
     ProviderResponse:
       type: object
       required:
@@ -438,6 +473,8 @@ components:
       type: string
       enum:
         - GITLAB
+        - GITHUB
+        - AZURE_DEVOPS
     SessionRequest:
       type: object
       required:
@@ -498,6 +535,13 @@ components:
           $ref: "#/components/schemas/SessionStatus"
         workspacePath:
           type: string
+        vscodeUrl:
+          type: string
+          nullable: true
+        vscodePort:
+          type: integer
+          format: int32
+          nullable: true
         errorMessage:
           type: string
           nullable: true
@@ -512,6 +556,7 @@ components:
       enum:
         - CREATING
         - READY
+        - STOPPED
         - FAILED
     SessionLogResponse:
       type: object

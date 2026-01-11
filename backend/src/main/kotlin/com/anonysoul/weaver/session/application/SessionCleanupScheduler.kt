@@ -1,5 +1,7 @@
 package com.anonysoul.weaver.session.application
 
+import com.anonysoul.weaver.session.domain.SessionLogRepository
+import com.anonysoul.weaver.session.domain.SessionRepository
 import com.anonysoul.weaver.session.infrastructure.docker.SessionContainerManager
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -45,14 +47,14 @@ class SessionCleanupScheduler(
                 .mapNotNull { parseSessionId(it) }
                 .filter { it !in activeSessionIds }
         orphanIds.forEach { sessionId ->
-            val removeResult = sessionContainerManager.removeContainer(sessionId)
-            if (removeResult.exitCode == 0) {
-                logger.info("Removed orphan container for sessionId={}", sessionId)
+            val stopResult = sessionContainerManager.stopContainer(sessionId)
+            if (stopResult.exitCode == 0) {
+                logger.info("Stopped orphan container for sessionId={}", sessionId)
             } else {
                 logger.warn(
-                    "Failed to remove orphan container for sessionId={}: {}",
+                    "Failed to stop orphan container for sessionId={}: {}",
                     sessionId,
-                    removeResult.stderr.trim().ifBlank { "no stderr" },
+                    stopResult.stderr.trim().ifBlank { "no stderr" },
                 )
             }
         }
@@ -60,7 +62,8 @@ class SessionCleanupScheduler(
 
     private fun cleanupSessionLogs() {
         val retentionThreshold =
-            Instant.now()
+            Instant
+                .now()
                 .minus(properties.logRetentionDays, ChronoUnit.DAYS)
                 .toEpochMilli()
         val logDir = Paths.get(sessionLogProperties.basePath)

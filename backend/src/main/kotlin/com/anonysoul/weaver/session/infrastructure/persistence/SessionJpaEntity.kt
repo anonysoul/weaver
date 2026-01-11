@@ -31,6 +31,8 @@ class SessionJpaEntity(
     var status: SessionState,
     @Column(name = "workspace_path", nullable = false, length = 2048)
     var workspacePath: String,
+    @Column(name = "vscode_port")
+    var vscodePort: Int? = null,
     @Column(name = "error_message", length = 4096)
     var errorMessage: String? = null,
     @Column(name = "created_at", nullable = false)

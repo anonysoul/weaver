@@ -5,6 +5,8 @@ import com.anonysoul.weaver.provider.GitLabRepoResponse
 import com.anonysoul.weaver.provider.ProviderRequest
 import com.anonysoul.weaver.provider.ProviderResponse
 import com.anonysoul.weaver.provider.ProviderType
+import com.anonysoul.weaver.provider.application.port.AzureDevOpsClient
+import com.anonysoul.weaver.provider.application.port.GitHubClient
 import com.anonysoul.weaver.provider.application.port.GitLabClient
 import com.anonysoul.weaver.provider.application.port.TokenCipher
 import com.anonysoul.weaver.provider.domain.Provider
@@ -20,6 +22,8 @@ class ProviderApplicationService(
     private val providerRepository: ProviderRepository,
     private val tokenCipher: TokenCipher,
     private val gitLabClient: GitLabClient,
+    private val gitHubClient: GitHubClient,
+    private val azureDevOpsClient: AzureDevOpsClient,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -28,12 +32,13 @@ class ProviderApplicationService(
     @Transactional
     fun create(request: ProviderRequest): ProviderResponse {
         val now = Instant.now()
+        val providerType = request.type
         val provider =
             Provider(
                 id = null,
                 name = request.name.trim(),
                 baseUrl = request.baseUrl.trim(),
-                type = ProviderType.GITLAB,
+                type = providerType,
                 encryptedToken = tokenCipher.encrypt(request.token.trim()),
                 createdAt = now,
                 updatedAt = now,
@@ -49,6 +54,7 @@ class ProviderApplicationService(
         request: ProviderRequest,
     ): ProviderResponse {
         val provider = providerRepository.findById(id) ?: throw EntityNotFoundException("Provider not found")
+        val providerType = request.type
         val updated =
             provider.withUpdatedValues(
                 name = request.name.trim(),
@@ -56,7 +62,7 @@ class ProviderApplicationService(
                 encryptedToken = tokenCipher.encrypt(request.token.trim()),
                 updatedAt = Instant.now(),
             )
-        val saved = providerRepository.save(updated)
+        val saved = providerRepository.save(updated.copy(type = providerType))
         logger.info("Provider updated id={}", saved.id)
         return saved.toResponse()
     }
@@ -74,7 +80,12 @@ class ProviderApplicationService(
     fun testConnection(id: Long): ConnectionTestResponse {
         val provider = providerRepository.findById(id) ?: throw EntityNotFoundException("Provider not found")
         val token = tokenCipher.decrypt(provider.encryptedToken)
-        val result = gitLabClient.testConnection(provider.baseUrl, token)
+        val result =
+            when (provider.type) {
+                ProviderType.GITLAB -> gitLabClient.testConnection(provider.baseUrl, token)
+                ProviderType.GITHUB -> gitHubClient.testConnection(provider.baseUrl, token)
+                ProviderType.AZURE_DEVOPS -> azureDevOpsClient.testConnection(provider.baseUrl, token)
+            }
         logger.info("Provider connection test id={}, ok={}", id, result.ok)
         return ConnectionTestResponse(ok = result.ok, message = result.message)
     }
@@ -84,18 +95,47 @@ class ProviderApplicationService(
         val provider = providerRepository.findById(id) ?: throw EntityNotFoundException("Provider not found")
         val token = tokenCipher.decrypt(provider.encryptedToken)
         val repos =
-            gitLabClient
-                .listProjects(provider.baseUrl, token)
-                .map {
-                    GitLabRepoResponse(
-                        id = it.id,
-                        name = it.name,
-                        pathWithNamespace = it.pathWithNamespace,
-                        defaultBranch = it.defaultBranch,
-                        webUrl = it.webUrl,
-                        httpUrlToRepo = it.httpUrlToRepo,
-                    )
-                }
+            when (provider.type) {
+                ProviderType.GITLAB ->
+                    gitLabClient
+                        .listProjects(provider.baseUrl, token)
+                        .map {
+                            GitLabRepoResponse(
+                                id = it.id,
+                                name = it.name,
+                                pathWithNamespace = it.pathWithNamespace,
+                                defaultBranch = it.defaultBranch,
+                                webUrl = it.webUrl,
+                                httpUrlToRepo = it.httpUrlToRepo,
+                            )
+                        }
+                ProviderType.GITHUB ->
+                    gitHubClient
+                        .listRepositories(provider.baseUrl, token)
+                        .map {
+                            GitLabRepoResponse(
+                                id = it.id,
+                                name = it.name,
+                                pathWithNamespace = it.fullName,
+                                defaultBranch = it.defaultBranch,
+                                webUrl = it.htmlUrl,
+                                httpUrlToRepo = it.cloneUrl,
+                            )
+                        }
+                ProviderType.AZURE_DEVOPS ->
+                    azureDevOpsClient
+                        .listRepositories(provider.baseUrl, token)
+                        .map {
+                            GitLabRepoResponse(
+                                id = azureRepoId(it.id),
+                                name = it.name,
+                                pathWithNamespace = azurePathWithNamespace(it.name, it.project?.name),
+                                defaultBranch = null,
+                                webUrl = it.webUrl,
+                                httpUrlToRepo = it.remoteUrl,
+                            )
+                        }
+            }
         logger.info("Provider repos listed id={}, count={}", id, repos.size)
         return repos
     }
@@ -107,4 +147,24 @@ class ProviderApplicationService(
             baseUrl = baseUrl,
             type = type,
         )
+
+    private fun azureRepoId(id: String): Long =
+        try {
+            val uuid = java.util.UUID.fromString(id)
+            uuid.mostSignificantBits xor uuid.leastSignificantBits
+        } catch (ex: IllegalArgumentException) {
+            id.hashCode().toLong()
+        }
+
+    private fun azurePathWithNamespace(
+        repoName: String,
+        projectName: String?,
+    ): String {
+        val trimmedProject = projectName?.trim().orEmpty()
+        return if (trimmedProject.isBlank()) {
+            repoName
+        } else {
+            "$trimmedProject/$repoName"
+        }
+    }
 }

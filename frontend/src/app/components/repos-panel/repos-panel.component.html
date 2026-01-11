@@ -1,0 +1,40 @@
+<p-card class="panel-card">
+  <ng-template pTemplate="title">仓库目录</ng-template>
+  <ng-template pTemplate="content">
+    <p-table
+      [value]="repos()"
+      [loading]="loading()"
+      selectionMode="single"
+      [(selection)]="selectedRepo"
+      [metaKeySelection]="false"
+      dataKey="id"
+      (onRowSelect)="selectRepo($event.data)"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>仓库 / 命名空间</th>
+          <th>默认分支</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-repo>
+        <tr [pSelectableRow]="repo" [class.repo-selected]="selectedRepo?.id === repo.id">
+          <td>
+            <div class="repo-name">{{ repo.name }}</div>
+            <div class="repo-namespace">{{ repo.pathWithNamespace }}</div>
+          </td>
+          <td>
+            <p-tag [value]="repo.defaultBranch || 'main'" severity="success"></p-tag>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="2" class="empty-cell">
+            {{ provider ? '该平台接入暂无仓库。' : '请选择平台接入后查看仓库。' }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </ng-template>
+</p-card>

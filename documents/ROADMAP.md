@@ -176,3 +176,24 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - GitHub API 封装与认证流程
 - Azure DevOps API 封装与认证流程
 - 多平台连接与仓库选择 UI 优化
+
+---
+
+## Milestone 6：会话容器内置 VSCode Web
+
+### 目标
+- 会话容器内内置 VSCode Web，并对外暴露访问端口
+- 用户通过 Web 页面访问该端口即可进行容器内项目操作
+- 默认打开容器内 `/root/workspace` 下的项目目录
+
+### 验收标准
+- 每个会话容器内可启动 VSCode Web 服务并对外暴露端口
+- 前端可获取并展示 VSCode Web 访问地址
+- 访问 VSCode Web 时默认打开 `/root/workspace` 下唯一项目目录（或匹配会话绑定仓库）
+
+### 主要任务
+- 选型并集成 VSCode Web 运行方案（如 code-server）
+- 容器镜像构建中预置 VSCode Web 相关依赖
+- 会话容器启动时自动拉起 VSCode Web，并动态分配/映射端口
+- 后端新增会话 VSCode Web 地址与端口管理能力
+- 前端会话详情页增加 VSCode Web 入口

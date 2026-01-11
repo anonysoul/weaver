@@ -3,13 +3,13 @@ package com.anonysoul.weaver.session.application
 import com.anonysoul.weaver.provider.ProviderType
 import com.anonysoul.weaver.provider.SessionRequest
 import com.anonysoul.weaver.provider.SessionResponse
-import com.anonysoul.weaver.provider.SessionStatus
 import com.anonysoul.weaver.provider.domain.ProviderRepository
 import com.anonysoul.weaver.session.domain.Session
 import com.anonysoul.weaver.session.domain.SessionLog
 import com.anonysoul.weaver.session.domain.SessionLogRepository
 import com.anonysoul.weaver.session.domain.SessionRepository
 import com.anonysoul.weaver.session.domain.SessionState
+import com.anonysoul.weaver.session.infrastructure.docker.SessionContainerManager
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -18,8 +18,6 @@ import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.nio.file.Paths
 import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 
 @Service
 class SessionApplicationService(
@@ -28,15 +26,25 @@ class SessionApplicationService(
     private val providerRepository: ProviderRepository,
     private val workspaceProperties: WorkspaceProperties,
     private val sessionInitializer: SessionInitializer,
+    private val sessionContainerManager: SessionContainerManager,
+    private val sessionResponseMapper: SessionResponseMapper,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val repoNamePattern = Regex("^[A-Za-z0-9._-]+$")
 
-    fun list(): List<SessionResponse> = sessionRepository.findAll().map { it.toResponse() }
+    fun list(): List<SessionResponse> {
+        val sessions = sessionRepository.findAll()
+        val containerStates = sessionContainerManager.listSessionContainerStates()
+        return sessions.map { session ->
+            val containerState = session.id?.let { containerStates[it] }
+            sessionResponseMapper.toResponse(session, containerState)
+        }
+    }
 
     fun get(id: Long): SessionResponse {
         val session = sessionRepository.findById(id) ?: throw EntityNotFoundException("Session not found")
-        return session.toResponse()
+        val containerState = sessionContainerManager.resolveContainerState(id)
+        return sessionResponseMapper.toResponse(session, containerState)
     }
 
     @Transactional
@@ -45,7 +53,7 @@ class SessionApplicationService(
         val provider =
             providerRepository.findById(request.providerId)
                 ?: throw EntityNotFoundException("Provider not found")
-        if (provider.type != ProviderType.GITLAB) {
+        if (provider.type !in setOf(ProviderType.GITLAB, ProviderType.GITHUB, ProviderType.AZURE_DEVOPS)) {
             throw IllegalArgumentException("Provider type not supported")
         }
 
@@ -62,6 +70,7 @@ class SessionApplicationService(
                 defaultBranch = request.defaultBranch?.trim()?.ifBlank { null },
                 status = SessionState.CREATING,
                 workspacePath = "",
+                vscodePort = null,
                 errorMessage = null,
                 createdAt = now,
                 updatedAt = now,
@@ -79,7 +88,7 @@ class SessionApplicationService(
                 }
             },
         )
-        return updated.toResponse()
+        return sessionResponseMapper.toResponse(updated)
     }
 
     @Transactional
@@ -129,19 +138,4 @@ class SessionApplicationService(
         )
     }
 
-    private fun Session.toResponse(): SessionResponse =
-        SessionResponse(
-            id = id ?: 0L,
-            providerId = providerId,
-            repoId = repoId,
-            repoName = repoName,
-            repoPathWithNamespace = repoPathWithNamespace,
-            repoHttpUrl = repoHttpUrl,
-            defaultBranch = defaultBranch,
-            status = SessionStatus.valueOf(status.name),
-            workspacePath = workspacePath,
-            errorMessage = errorMessage,
-            createdAt = OffsetDateTime.ofInstant(createdAt, ZoneOffset.UTC),
-            updatedAt = OffsetDateTime.ofInstant(updatedAt, ZoneOffset.UTC),
-        )
 }

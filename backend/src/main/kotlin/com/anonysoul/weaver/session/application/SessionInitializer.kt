@@ -1,5 +1,6 @@
 package com.anonysoul.weaver.session.application
 
+import com.anonysoul.weaver.provider.application.ProviderAuthSupport
 import com.anonysoul.weaver.provider.application.port.TokenCipher
 import com.anonysoul.weaver.provider.domain.ProviderRepository
 import com.anonysoul.weaver.session.domain.SessionLog
@@ -24,6 +25,7 @@ class SessionInitializer(
     private val tokenCipher: TokenCipher,
     private val sessionContainerManager: SessionContainerManager,
     private val sessionLockManager: SessionLockManager,
+    private val vscodeProperties: VscodeProperties,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -40,17 +42,19 @@ class SessionInitializer(
                     providerRepository.findById(session.providerId)
                         ?: throw IllegalStateException("Provider not found")
                 val token = tokenCipher.decrypt(provider.encryptedToken)
+                val authUser = ProviderAuthSupport.authUser(provider.type)
                 val containerName = sessionContainerManager.containerName(sessionId)
                 appendLog(sessionId, "Creating session container.")
                 val createResult = sessionContainerManager.createContainer(sessionId)
-                if (createResult.exitCode != 0) {
-                    val errorMessage = createResult.stderr.ifBlank { "Container creation failed" }
+                if (createResult.result.exitCode != 0) {
+                    val errorMessage = createResult.result.stderr.ifBlank { "Container creation failed" }
                     val updated = session.withStatus(SessionState.FAILED, Instant.now(), "Container creation failed")
                     sessionRepository.save(updated)
                     appendLog(sessionId, errorMessage.trim())
                     logger.warn("Container creation failed for sessionId={}", sessionId)
                     return@withLock
                 }
+                val vscodePort = createResult.vscodePort
                 containerCreated = true
 
                 appendLog(sessionId, "Preparing workspace in container.")
@@ -61,7 +65,7 @@ class SessionInitializer(
                     sessionRepository.save(updated)
                     appendLog(sessionId, errorMessage.trim())
                     logger.warn("Workspace preparation failed for sessionId={}", sessionId)
-                    sessionContainerManager.removeContainer(sessionId)
+                    sessionContainerManager.stopContainer(sessionId)
                     return@withLock
                 }
                 sessionContainerManager.clearWorkspace(containerName, session.repoName)
@@ -72,10 +76,39 @@ class SessionInitializer(
                         containerName,
                         session.repoHttpUrl,
                         token,
+                        authUser,
                         session.repoName,
                     )
                 if (result.exitCode == 0) {
-                    val updated = session.withStatus(SessionState.READY, Instant.now(), null)
+                    val readyAt = Instant.now()
+                    val updated =
+                        if (vscodeProperties.enabled) {
+                            if (vscodePort == null) {
+                                val errorMessage = "VSCode Web host port allocation failed"
+                                val failed = session.withStatus(SessionState.FAILED, Instant.now(), errorMessage)
+                                sessionRepository.save(failed)
+                                appendLog(sessionId, errorMessage)
+                                logger.warn("VSCode Web host port allocation failed for sessionId={}", sessionId)
+                                sessionContainerManager.stopContainer(sessionId)
+                                return@withLock
+                            }
+                            appendLog(sessionId, "Starting VSCode Web in container.")
+                            val vscodeResult = sessionContainerManager.startCodeServer(containerName, session.repoName)
+                            if (vscodeResult.exitCode != 0) {
+                                val errorMessage = vscodeResult.stderr.ifBlank { "VSCode Web startup failed" }
+                                val failed = session.withStatus(SessionState.FAILED, Instant.now(), errorMessage.trim())
+                                sessionRepository.save(failed)
+                                appendLog(sessionId, errorMessage.trim())
+                                logger.warn("VSCode Web startup failed for sessionId={}", sessionId)
+                                sessionContainerManager.stopContainer(sessionId)
+                                return@withLock
+                            }
+                            session
+                                .withStatus(SessionState.READY, readyAt, null)
+                                .withVscodePort(vscodePort, readyAt)
+                        } else {
+                            session.withStatus(SessionState.READY, readyAt, null)
+                        }
                     sessionRepository.save(updated)
                     appendLog(sessionId, "Workspace ready.")
                     logger.info("Session ready for sessionId={}", sessionId)
@@ -85,7 +118,7 @@ class SessionInitializer(
                     sessionRepository.save(updated)
                     appendLog(sessionId, errorMessage.trim())
                     logger.warn("Git clone failed for sessionId={}", sessionId)
-                    sessionContainerManager.removeContainer(sessionId)
+                    sessionContainerManager.stopContainer(sessionId)
                 }
             } catch (ex: Exception) {
                 val updated = session.withStatus(SessionState.FAILED, Instant.now(), "Initialization failed")
@@ -93,7 +126,7 @@ class SessionInitializer(
                 appendLog(sessionId, "Initialization failed: ${ex.message ?: "Unknown error"}")
                 logger.error("Initialization failed for sessionId={}", sessionId, ex)
                 if (containerCreated) {
-                    sessionContainerManager.removeContainer(sessionId)
+                    sessionContainerManager.stopContainer(sessionId)
                 }
             }
         }
@@ -102,7 +135,7 @@ class SessionInitializer(
     fun cleanupSession(sessionId: Long) {
         logger.info("Cleaning up session container for sessionId={}", sessionId)
         sessionLockManager.withLock(sessionId) {
-            sessionContainerManager.removeContainer(sessionId)
+            sessionContainerManager.stopContainer(sessionId)
         }
     }
 
@@ -112,7 +145,7 @@ class SessionInitializer(
         sessionRepository.findAll().forEach { session ->
             val sessionId = session.id
             if (sessionId != null) {
-                sessionContainerManager.removeContainer(sessionId)
+                sessionContainerManager.stopContainer(sessionId)
             }
         }
     }

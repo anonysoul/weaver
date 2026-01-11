@@ -1,0 +1,97 @@
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  padding: 1.6rem 1.35rem 1.4rem;
+  height: 100%;
+  background: linear-gradient(180deg, #f9f5ef 0%, #eff3f7 100%);
+  border-right: 1px solid rgba(24, 32, 39, 0.08);
+  color: #2a3640;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-accent {
+  height: 6px;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f28f3b, #e26d5a, #4ea1d3);
+  box-shadow: 0 8px 18px rgba(226, 109, 90, 0.2);
+}
+
+.brand {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: linear-gradient(140deg, #f6b26b, #f07b59);
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  color: #35170f;
+  box-shadow: 0 12px 24px rgba(240, 123, 89, 0.25);
+}
+
+.brand-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.brand-tagline {
+  font-size: 0.85rem;
+  color: rgba(42, 54, 64, 0.7);
+}
+
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.side-nav-menu {
+  background: transparent;
+  border: none;
+}
+
+:host ::ng-deep .side-nav-menu .p-menuitem {
+  margin-bottom: 0.6rem;
+}
+
+:host ::ng-deep .side-nav-menu .p-menuitem:last-child {
+  margin-bottom: 0;
+}
+
+:host ::ng-deep .side-nav-menu .p-menuitem-link {
+  color: rgba(42, 54, 64, 0.9);
+  border-radius: 14px;
+  padding: 0.8rem 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(42, 54, 64, 0.08);
+  box-shadow: 0 8px 16px rgba(30, 40, 48, 0.08);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+:host ::ng-deep .side-nav-menu .p-menuitem-link:hover {
+  background: #ffffff;
+  color: #1f2a32;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(30, 40, 48, 0.12);
+}
+
+:host ::ng-deep .side-nav-menu .p-menuitem-icon {
+  font-size: 1rem;
+  margin-right: 0.75rem;
+  color: #f28f3b;
+}

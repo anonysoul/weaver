@@ -1,0 +1,42 @@
+.panel-card {
+  border-radius: 18px;
+}
+
+.panel-toolbar {
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.repo-name {
+  font-weight: 600;
+  color: #102029;
+}
+
+.repo-namespace {
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: #5b6b77;
+}
+
+.muted {
+  color: #5b6b77;
+}
+
+.empty-cell {
+  text-align: center;
+  color: #70818d;
+  padding: 1rem;
+}
+
+:host ::ng-deep .p-datatable .repo-selected td {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+:host ::ng-deep .p-datatable .repo-selected td:first-child {
+  box-shadow: inset 4px 0 0 #2563eb;
+}
+
+:host ::ng-deep .p-datatable .repo-selected .repo-name {
+  color: #1d4ed8;
+}

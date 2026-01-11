@@ -1,0 +1,218 @@
+<p-card class="panel-card">
+  <ng-template pTemplate="title">会话管理</ng-template>
+  <ng-template pTemplate="subtitle">创建独立的会话容器并跟踪状态。</ng-template>
+  <ng-template pTemplate="content">
+    <p-toolbar styleClass="panel-toolbar">
+      <div class="p-toolbar-group-left">
+        <button
+          pButton
+          type="button"
+          icon="pi pi-play"
+          label="创建会话"
+          (click)="openCreateDialog()"
+        ></button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-refresh"
+          label="刷新"
+          class="p-button-text"
+          (click)="loadSessions()"
+        ></button>
+      </div>
+    </p-toolbar>
+
+    <p-table [value]="sessions()" [loading]="loading()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>仓库</th>
+          <th>状态</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-session>
+        <tr>
+          <td>
+            <div class="session-name">{{ session.repoName }}</div>
+            <div class="muted">{{ session.repoPathWithNamespace }}</div>
+          </td>
+          <td>
+            <p-tag
+              [value]="sessionStatusLabel(session.status)"
+              [severity]="sessionSeverity(session.status)"
+            ></p-tag>
+          </td>
+          <td class="muted">{{ session.createdAt | date: 'yyyy-MM-dd HH:mm' }}</td>
+          <td>
+            <div class="table-actions">
+              <button
+                *ngIf="canStartContainer(session)"
+                pButton
+                type="button"
+                icon="pi pi-play"
+                class="p-button-text"
+                [loading]="startingSessionId() === session.id"
+                [disabled]="startingSessionId() === session.id"
+                (click)="startContainer(session)"
+              ></button>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-code"
+                class="p-button-text"
+                [disabled]="session.status !== SessionStatus.READY || !session.vscodeUrl"
+                (click)="openVscode(session)"
+              ></button>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-book"
+                class="p-button-text"
+                (click)="viewLogs(session)"
+              ></button>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-file"
+                class="p-button-text"
+                [disabled]="session.status !== SessionStatus.READY"
+                (click)="viewContext(session)"
+              ></button>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-trash"
+                class="p-button-text p-button-danger"
+                (click)="confirmDelete(session)"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="empty-cell">暂无会话，请点击创建会话选择仓库。</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </ng-template>
+</p-card>
+
+<p-dialog
+  header="创建会话"
+  [visible]="createVisible()"
+  (visibleChange)="createVisible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '920px' }"
+>
+  <div class="create-provider">
+    <div class="create-provider-header">
+      <div class="create-provider-label">选择平台接入</div>
+      <span class="create-provider-hint">点击卡片选择，切换后自动同步仓库列表</span>
+    </div>
+    <div class="provider-grid" *ngIf="providers.length; else emptyProviders">
+      <button
+        type="button"
+        class="provider-tile"
+        *ngFor="let provider of providers"
+        [class.active]="selectedProvider?.id === provider.id"
+        (click)="onProviderSelected(provider)"
+      >
+        <div class="provider-title">
+          <div class="provider-identity">
+            <span class="provider-icon" [attr.data-type]="provider.type">
+              <i *ngIf="provider.type === 'GITHUB'" class="pi pi-github"></i>
+              <i *ngIf="provider.type === 'AZURE_DEVOPS'" class="pi pi-microsoft"></i>
+              <svg *ngIf="provider.type === 'GITLAB'" viewBox="0 0 256 236" aria-hidden="true">
+                <path d="M128 235.7 80.9 90.8H175z" fill="currentColor"></path>
+                <path d="m128 235.7 47.1-144.9h66L128 235.7z" fill="currentColor"></path>
+                <path
+                  d="M241.1 90.8 224.5 39.6c-1.7-5.1-9-5.1-10.7 0l-16.8 51.2z"
+                  fill="currentColor"
+                ></path>
+                <path d="m128 235.7-47.1-144.9H14.9L128 235.7z" fill="currentColor"></path>
+                <path
+                  d="M14.9 90.8 31.6 39.6c1.7-5.1 9-5.1 10.7 0l16.8 51.2z"
+                  fill="currentColor"
+                ></path>
+              </svg>
+            </span>
+            <span class="provider-name">{{ provider.name }}</span>
+          </div>
+          <p-tag [value]="getProviderTypeLabel(provider.type)" severity="info"> </p-tag>
+        </div>
+        <div class="provider-meta">{{ provider.baseUrl }}</div>
+      </button>
+    </div>
+    <ng-template #emptyProviders>
+      <div class="provider-empty">暂无平台接入，请先创建。</div>
+    </ng-template>
+  </div>
+  <app-repos-panel
+    [provider]="selectedProvider"
+    (repoSelected)="onRepoSelected($event)"
+  ></app-repos-panel>
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <button
+        pButton
+        type="button"
+        label="创建会话"
+        icon="pi pi-check"
+        (click)="createSession()"
+        [disabled]="!selectedProvider || !selectedRepo"
+      ></button>
+      <button
+        pButton
+        type="button"
+        label="取消"
+        icon="pi pi-times"
+        class="p-button-outlined cancel-button"
+        (click)="createVisible.set(false)"
+      ></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="会话日志"
+  [visible]="logsVisible()"
+  (visibleChange)="logsVisible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '720px' }"
+>
+  <p-table [value]="logs()" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>时间</th>
+        <th>内容</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-log>
+      <tr>
+        <td class="muted">{{ log.createdAt | date: 'HH:mm:ss' }}</td>
+        <td>{{ log.message }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-dialog>
+
+<p-dialog
+  header="会话上下文"
+  [visible]="contextVisible()"
+  (visibleChange)="contextVisible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '720px' }"
+>
+  <textarea
+    pInputTextarea
+    [autoResize]="true"
+    class="context-area"
+    [value]="contextPayload()"
+    readonly
+  ></textarea>
+</p-dialog>

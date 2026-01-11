@@ -1,0 +1,56 @@
+<div class="overview-grid">
+  <p-card class="overview-card overview-card--compact">
+    <ng-template pTemplate="title">平台接入分布</ng-template>
+    <ng-template pTemplate="content">
+      <div class="overview-list overview-list--compact">
+        <div class="overview-item" *ngFor="let provider of providerStats">
+          <div class="platform-chip" [ngClass]="'platform-chip--' + provider.tone">
+            <i *ngIf="provider.iconType === 'pi'" [class]="provider.icon"></i>
+            <svg
+              *ngIf="provider.iconType === 'text' && provider.type === 'GITLAB'"
+              viewBox="0 0 256 236"
+              class="gitlab-icon"
+              aria-hidden="true"
+            >
+              <path d="M128 235.7 80.9 90.8H175z" fill="#E24329"></path>
+              <path d="m128 235.7 47.1-144.9h66L128 235.7z" fill="#FC6D26"></path>
+              <path
+                d="M241.1 90.8 224.5 39.6c-1.7-5.1-9-5.1-10.7 0l-16.8 51.2z"
+                fill="#FCA326"
+              ></path>
+              <path d="m128 235.7-47.1-144.9H14.9L128 235.7z" fill="#FC6D26"></path>
+              <path d="M14.9 90.8 31.6 39.6c1.7-5.1 9-5.1 10.7 0l16.8 51.2z" fill="#FCA326"></path>
+            </svg>
+            <span *ngIf="provider.iconType === 'text' && provider.type !== 'GITLAB'">
+              {{ provider.icon }}
+            </span>
+          </div>
+          <div class="overview-meta">
+            <div class="overview-label">{{ provider.label }}</div>
+            <div class="overview-sub">平台接入数</div>
+          </div>
+          <div class="overview-count">{{ provider.count }}</div>
+        </div>
+      </div>
+    </ng-template>
+  </p-card>
+
+  <p-card class="overview-card overview-card--compact">
+    <ng-template pTemplate="title">会话状态</ng-template>
+    <ng-template pTemplate="content">
+      <div class="overview-list overview-list--compact">
+        <div class="overview-item" *ngFor="let session of sessionStats">
+          <div class="status-chip" [ngClass]="'status-chip--' + session.tone">
+            <span class="status-dot"></span>
+            <span>{{ session.label }}</span>
+          </div>
+          <div class="overview-meta">
+            <div class="overview-label">{{ session.status }}</div>
+            <div class="overview-sub">会话数</div>
+          </div>
+          <div class="overview-count">{{ session.count }}</div>
+        </div>
+      </div>
+    </ng-template>
+  </p-card>
+</div>

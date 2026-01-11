@@ -12,6 +12,7 @@ data class Session(
     val defaultBranch: String?,
     val status: SessionState,
     val workspacePath: String,
+    val vscodePort: Int?,
     val errorMessage: String?,
     val createdAt: Instant,
     val updatedAt: Instant,
@@ -22,6 +23,15 @@ data class Session(
     ): Session =
         copy(
             workspacePath = path,
+            updatedAt = updatedAt,
+        )
+
+    fun withVscodePort(
+        port: Int?,
+        updatedAt: Instant,
+    ): Session =
+        copy(
+            vscodePort = port,
             updatedAt = updatedAt,
         )
 

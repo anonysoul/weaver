@@ -1,0 +1,22 @@
+services:
+  weaver:
+    image: anonysoul/weaver:1.0
+    container_name: weaver
+    ports:
+      - "8765:8765"
+    environment:
+      WEAVER_DB_URL: jdbc:sqlite:/data/weaver.db
+      WEAVER_PORT: 8765
+      WEAVER_CONTAINER_IMAGE: anonysoul/weaver-workspace-codex:1.0
+      WEAVER_CONTAINER_DATA_VOLUME: weaver-data
+      WEAVER_SESSION_LOGS_BASE_PATH: /app/session-logs
+    volumes:
+      - /run/user/1000/docker.sock:/var/run/docker.sock
+      # - /var/run/docker.sock:/var/run/docker.sock
+      - weaver-data:/data
+      - weaver-session-logs:/app/session-logs
+    restart: unless-stopped
+
+volumes:
+  weaver-data:
+  weaver-session-logs:

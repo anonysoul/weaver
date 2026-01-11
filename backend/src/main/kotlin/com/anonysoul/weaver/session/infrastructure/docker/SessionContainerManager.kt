@@ -312,7 +312,11 @@ class SessionContainerManager(
         if (vscodeProperties.hostPortStart > vscodeProperties.hostPortEnd) {
             return null
         }
+        val usedPorts = resolveUsedVscodePorts()
         for (port in vscodeProperties.hostPortStart..vscodeProperties.hostPortEnd) {
+            if (port in usedPorts) {
+                continue
+            }
             if (isPortAvailable(port)) {
                 return port
             }
@@ -341,6 +345,32 @@ class SessionContainerManager(
                 ?: return null
         val portText = target.substringAfterLast(':', "")
         return portText.toIntOrNull()
+    }
+
+    private fun resolveUsedVscodePorts(): Set<Int> {
+        if (!vscodeProperties.enabled) {
+            return emptySet()
+        }
+        val command =
+            listOf(
+                "docker",
+                "ps",
+                "--filter",
+                "label=weaver.sessionId",
+                "--filter",
+                "status=running",
+                "--format",
+                "{{.Ports}}",
+            )
+        val result = dockerCommandRunner.run(command)
+        if (result.exitCode != 0) {
+            return emptySet()
+        }
+        val portPattern = Regex(""":(\d+)->${vscodeProperties.internalPort}/tcp""")
+        return result.stdout
+            .lines()
+            .flatMap { line -> portPattern.findAll(line).mapNotNull { it.groupValues[1].toIntOrNull() }.toList() }
+            .toSet()
     }
 
     private fun parseContainerState(value: String): ContainerState {

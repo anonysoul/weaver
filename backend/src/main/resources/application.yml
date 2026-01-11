@@ -12,6 +12,9 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.community.dialect.SQLiteDialect
+  web:
+    resources:
+      static-locations: classpath:/static/,classpath:/public/,file:/app/static/
 
 weaver:
   crypto:

@@ -21,6 +21,10 @@ RUN curl -fSL "https://github.com/coder/code-server/releases/download/v${CODE_SE
   && rm -f /tmp/code-server.deb \
   && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /root/.local/share/code-server/User \
+  && printf '%s\n' '{"workbench.colorTheme": "Default Dark+"}' \
+  > /root/.local/share/code-server/User/settings.json
+
 # install nvm
 ENV NVM_DIR=/root/.nvm
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash

@@ -2,6 +2,11 @@
 **/node_modules
 **/dist
 **/build
+!frontend/dist
+!frontend/dist/weaver
+!backend/build
+!backend/build/libs
+!backend/build/libs/*.jar
 **/.gradle
 **/.idea
 **/.vscode

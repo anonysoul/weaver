@@ -266,7 +266,7 @@ export class SessionsPanelComponent {
       });
       return;
     }
-    window.open(session.vscodeUrl, '_blank', 'noopener');
+    window.open(this.resolveVscodeUrl(session.vscodeUrl), '_blank', 'noopener');
   }
 
   startContainer(session: SessionResponse): void {
@@ -325,5 +325,21 @@ export class SessionsPanelComponent {
       default:
         return '创建中';
     }
+  }
+
+  private resolveVscodeUrl(rawUrl: string): string {
+    let resolvedUrl: URL;
+    try {
+      resolvedUrl = new URL(rawUrl, window.location.origin);
+    } catch {
+      return rawUrl;
+    }
+
+    const localHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0']);
+    if (localHosts.has(resolvedUrl.hostname)) {
+      resolvedUrl.hostname = window.location.hostname;
+    }
+
+    return resolvedUrl.toString();
   }
 }

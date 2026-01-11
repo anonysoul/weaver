@@ -1,3 +1,5 @@
+import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,30 +10,28 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
-import { TableModule } from 'primeng/table';
 import { SelectModule } from 'primeng/select';
+import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { ToolbarModule } from 'primeng/toolbar';
 import { TextareaModule } from 'primeng/textarea';
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
+import { ToolbarModule } from 'primeng/toolbar';
+import { EMPTY, Subscription, catchError, finalize, switchMap, timer } from 'rxjs';
 
 import { SessionsService } from '../../core/openapi/api/sessions.service';
-import { SessionResponse } from '../../core/openapi/model/session-response';
-import { SessionRequest } from '../../core/openapi/model/session-request';
-import { SessionStatus } from '../../core/openapi/model/session-status';
-import { SessionLogResponse } from '../../core/openapi/model/session-log-response';
-import { SessionContextResponse } from '../../core/openapi/model/session-context-response';
+import { GitLabRepoResponse } from '../../core/openapi/model/git-lab-repo-response';
 import { ProviderResponse } from '../../core/openapi/model/provider-response';
 import { ProviderType } from '../../core/openapi/model/provider-type';
-import { GitLabRepoResponse } from '../../core/openapi/model/git-lab-repo-response';
+import { SessionContextResponse } from '../../core/openapi/model/session-context-response';
+import { SessionLogResponse } from '../../core/openapi/model/session-log-response';
+import { SessionRequest } from '../../core/openapi/model/session-request';
+import { SessionResponse } from '../../core/openapi/model/session-response';
+import { SessionStatus } from '../../core/openapi/model/session-status';
 import { BASE_PATH } from '../../core/openapi/variables';
 import { ReposPanelComponent } from '../repos-panel/repos-panel.component';
 
@@ -78,11 +78,18 @@ export class SessionsPanelComponent {
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
+  private refreshSubscription: Subscription | null = null;
 
   readonly SessionStatus = SessionStatus;
+  private readonly refreshIntervalMs = 3000;
 
   constructor() {
     this.loadSessions();
+    this.startAutoRefresh();
+    this.destroyRef.onDestroy(() => {
+      this.refreshSubscription?.unsubscribe();
+      this.refreshSubscription = null;
+    });
   }
 
   loadSessions(): void {
@@ -341,5 +348,24 @@ export class SessionsPanelComponent {
     }
 
     return resolvedUrl.toString();
+  }
+
+  private startAutoRefresh(): void {
+    this.refreshSubscription?.unsubscribe();
+    this.refreshSubscription = timer(this.refreshIntervalMs, this.refreshIntervalMs)
+      .pipe(
+        switchMap(() =>
+          this.sessionsService.listSessions().pipe(
+            // 自动刷新失败时不中断轮询，避免影响使用体验
+            catchError(() => EMPTY),
+          ),
+        ),
+      )
+      .subscribe({
+        next: (sessions) => {
+          this.sessions.set(sessions);
+          this.sessionsUpdated.emit(sessions);
+        },
+      });
   }
 }

@@ -240,7 +240,7 @@ export class ProvidersPanelComponent {
 
   private updatePlaceholders(type: ProviderType): void {
     if (type === ProviderType.GITHUB) {
-      this.baseUrlPlaceholder = 'https://github.com';
+      this.baseUrlPlaceholder = 'https://api.github.com';
       this.accountPlaceholder = 'GitHub 用户名';
       this.tokenPlaceholder = 'GitHub Personal Access Token';
       return;
@@ -258,7 +258,7 @@ export class ProvidersPanelComponent {
 
   private getBaseUrlForType(type: ProviderType): string {
     if (type === ProviderType.GITHUB) {
-      return 'https://github.com';
+      return 'https://api.github.com';
     }
     if (type === ProviderType.AZURE_DEVOPS) {
       return 'https://dev.azure.com/your-org';

@@ -120,6 +120,11 @@ class SessionContainerManager(
         return dockerCommandRunner.run(command)
     }
 
+    fun removeContainer(sessionId: Long): DockerCommandRunner.Result {
+        val command = listOf("docker", "rm", "-f", containerName(sessionId))
+        return dockerCommandRunner.run(command)
+    }
+
     fun startContainer(sessionId: Long): DockerCommandRunner.Result {
         val command = listOf("docker", "start", containerName(sessionId))
         return dockerCommandRunner.run(command)

@@ -57,6 +57,16 @@ class SessionCleanupScheduler(
                     stopResult.stderr.trim().ifBlank { "no stderr" },
                 )
             }
+            val removeResult = sessionContainerManager.removeContainer(sessionId)
+            if (removeResult.exitCode == 0) {
+                logger.info("Removed orphan container for sessionId={}", sessionId)
+            } else {
+                logger.warn(
+                    "Failed to remove orphan container for sessionId={}: {}",
+                    sessionId,
+                    removeResult.stderr.trim().ifBlank { "no stderr" },
+                )
+            }
         }
     }
 

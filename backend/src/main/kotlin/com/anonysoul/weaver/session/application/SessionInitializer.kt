@@ -135,7 +135,22 @@ class SessionInitializer(
     fun cleanupSession(sessionId: Long) {
         logger.info("Cleaning up session container for sessionId={}", sessionId)
         sessionLockManager.withLock(sessionId) {
-            sessionContainerManager.stopContainer(sessionId)
+            val stopResult = sessionContainerManager.stopContainer(sessionId)
+            if (stopResult.exitCode != 0) {
+                logger.warn(
+                    "Failed to stop session container for sessionId={}: {}",
+                    sessionId,
+                    stopResult.stderr.trim().ifBlank { "no stderr" },
+                )
+            }
+            val removeResult = sessionContainerManager.removeContainer(sessionId)
+            if (removeResult.exitCode != 0) {
+                logger.warn(
+                    "Failed to remove session container for sessionId={}: {}",
+                    sessionId,
+                    removeResult.stderr.trim().ifBlank { "no stderr" },
+                )
+            }
         }
     }
 

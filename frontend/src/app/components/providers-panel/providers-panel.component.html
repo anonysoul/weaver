@@ -79,10 +79,10 @@
 <p-dialog
   header="平台接入配置"
   [visible]="dialogVisible()"
-  (visibleChange)="dialogVisible.set($event)"
+  (visibleChange)="onDialogVisibleChange($event)"
   [modal]="true"
   [draggable]="false"
-  [style]="{ width: '420px' }"
+  [style]="{ width: '720px' }"
 >
   <div class="dialog-body p-fluid">
     <label>平台类型</label>
@@ -113,6 +113,9 @@
       [feedback]="false"
       [placeholder]="tokenPlaceholder"
     ></p-password>
+
+    <label>Git Config</label>
+    <div class="gitconfig-editor" #gitConfigEditor></div>
   </div>
 
   <ng-template pTemplate="footer">
@@ -121,7 +124,7 @@
       type="button"
       label="取消"
       class="p-button-text"
-      (click)="dialogVisible.set(false)"
+      (click)="onDialogVisibleChange(false)"
     ></button>
     <button pButton type="button" label="保存" (click)="saveProvider()"></button>
   </ng-template>

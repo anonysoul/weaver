@@ -27,6 +27,7 @@ class ProviderRepositoryAdapter(
             baseUrl = baseUrl,
             type = type,
             encryptedToken = encryptedToken,
+            gitConfig = gitConfig.orEmpty(),
             createdAt = createdAt,
             updatedAt = updatedAt,
         )
@@ -37,6 +38,7 @@ class ProviderRepositoryAdapter(
             baseUrl = baseUrl,
             type = type,
             encryptedToken = encryptedToken,
+            gitConfig = gitConfig,
             createdAt = createdAt,
             updatedAt = updatedAt,
             id = id,

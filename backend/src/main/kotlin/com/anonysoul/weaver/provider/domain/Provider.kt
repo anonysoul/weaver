@@ -9,6 +9,7 @@ data class Provider(
     val baseUrl: String,
     val type: ProviderType,
     val encryptedToken: String,
+    val gitConfig: String,
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
@@ -16,12 +17,14 @@ data class Provider(
         name: String,
         baseUrl: String,
         encryptedToken: String,
+        gitConfig: String,
         updatedAt: Instant,
     ): Provider =
         copy(
             name = name,
             baseUrl = baseUrl,
             encryptedToken = encryptedToken,
+            gitConfig = gitConfig,
             updatedAt = updatedAt,
         )
 }

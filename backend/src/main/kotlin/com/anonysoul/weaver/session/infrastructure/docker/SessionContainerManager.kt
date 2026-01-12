@@ -177,6 +177,23 @@ class SessionContainerManager(
         return dockerCommandRunner.run(command)
     }
 
+    fun writeGitConfig(
+        containerName: String,
+        gitConfig: String,
+    ): DockerCommandRunner.Result {
+        val encoded = Base64.getEncoder().encodeToString(gitConfig.toByteArray(StandardCharsets.UTF_8))
+        val command =
+            listOf(
+                "docker",
+                "exec",
+                containerName,
+                "/bin/sh",
+                "-c",
+                "printf '%s' \"$encoded\" | base64 -d > /root/.gitconfig",
+            )
+        return dockerCommandRunner.run(command)
+    }
+
     fun clearWorkspace(
         containerName: String,
         repoName: String,

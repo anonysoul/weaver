@@ -1,9 +1,13 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   EventEmitter,
+  OnDestroy,
   Output,
+  ViewChild,
   inject,
   signal,
 } from '@angular/core';
@@ -27,11 +31,17 @@ import { ProviderResponse } from '../../core/openapi/model/provider-response';
 import { ProviderRequest } from '../../core/openapi/model/provider-request';
 import { ProviderType } from '../../core/openapi/model/provider-type';
 
+import loader from '@monaco-editor/loader';
+import type * as Monaco from 'monaco-editor';
+
+const DEFAULT_GIT_CONFIG = '[credential]\n        helper = store\n';
+
 interface ProviderFormState {
   name: string;
   baseUrl: string;
   token: string;
   type: ProviderType;
+  gitConfig: string;
 }
 
 @Component({
@@ -54,8 +64,9 @@ interface ProviderFormState {
   styleUrl: './providers-panel.component.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProvidersPanelComponent {
+export class ProvidersPanelComponent implements AfterViewInit, OnDestroy {
   @Output() providersUpdated = new EventEmitter<ProviderResponse[]>();
+  @ViewChild('gitConfigEditor') gitConfigEditor?: ElementRef<HTMLDivElement>;
 
   providers = signal<ProviderResponse[]>([]);
   loading = signal(false);
@@ -79,10 +90,20 @@ export class ProvidersPanelComponent {
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
+  private editor: Monaco.editor.IStandaloneCodeEditor | null = null;
+  private editorModel: Monaco.editor.ITextModel | null = null;
 
   constructor() {
     this.loadProviders();
     this.updatePlaceholders(this.formState.type);
+  }
+
+  ngAfterViewInit(): void {
+    loader.config({ paths: { vs: 'assets/monaco/vs' } });
+  }
+
+  ngOnDestroy(): void {
+    this.disposeEditor();
   }
 
   loadProviders(): void {
@@ -113,6 +134,7 @@ export class ProvidersPanelComponent {
     this.formState = this.createEmptyForm();
     this.updatePlaceholders(this.formState.type);
     this.dialogVisible.set(true);
+    this.queueEditorInit();
   }
 
   openEdit(provider: ProviderResponse): void {
@@ -122,17 +144,21 @@ export class ProvidersPanelComponent {
       baseUrl: provider.baseUrl,
       token: '',
       type: provider.type,
+      gitConfig: provider.gitConfig.trimEnd() || DEFAULT_GIT_CONFIG,
     };
     this.updatePlaceholders(this.formState.type);
     this.dialogVisible.set(true);
+    this.queueEditorInit();
   }
 
   saveProvider(): void {
+    const gitConfig = this.formState.gitConfig.trimEnd() || DEFAULT_GIT_CONFIG;
     const payload: ProviderRequest = {
       name: this.formState.name.trim(),
       baseUrl: this.formState.baseUrl.trim(),
       token: this.formState.token.trim(),
       type: this.formState.type,
+      gitConfig,
     };
 
     if (!payload.name || !payload.baseUrl || !payload.token) {
@@ -155,7 +181,7 @@ export class ProvidersPanelComponent {
           summary: '保存成功',
           detail: this.editingProvider ? '平台接入已更新。' : '平台接入已创建。',
         });
-        this.dialogVisible.set(false);
+        this.onDialogVisibleChange(false);
         this.loadProviders();
       },
       error: () => {
@@ -229,6 +255,7 @@ export class ProvidersPanelComponent {
       baseUrl: this.getBaseUrlForType(defaultType),
       token: '',
       type: defaultType,
+      gitConfig: DEFAULT_GIT_CONFIG,
     };
   }
 
@@ -274,5 +301,55 @@ export class ProvidersPanelComponent {
       return 'https://learn.microsoft.com/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops';
     }
     return 'https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html';
+  }
+
+  onDialogVisibleChange(visible: boolean): void {
+    this.dialogVisible.set(visible);
+    if (!visible) {
+      this.disposeEditor();
+      return;
+    }
+    this.queueEditorInit();
+  }
+
+  private queueEditorInit(): void {
+    setTimeout(() => {
+      void this.initEditor();
+    }, 0);
+  }
+
+  private async initEditor(): Promise<void> {
+    const host = this.gitConfigEditor?.nativeElement;
+    if (!host) {
+      return;
+    }
+    const monaco = await loader.init();
+    if (!this.editorModel) {
+      this.editorModel = monaco.editor.createModel(this.formState.gitConfig, 'ini');
+    } else {
+      this.editorModel.setValue(this.formState.gitConfig);
+    }
+    if (this.editor) {
+      this.editor.dispose();
+    }
+    this.editor = monaco.editor.create(host, {
+      model: this.editorModel,
+      theme: 'vs-dark',
+      automaticLayout: true,
+      scrollBeyondLastLine: false,
+      minimap: { enabled: false },
+      fontSize: 13,
+      wordWrap: 'on',
+    });
+    this.editor.onDidChangeModelContent(() => {
+      this.formState.gitConfig = this.editorModel?.getValue() ?? '';
+    });
+  }
+
+  private disposeEditor(): void {
+    this.editor?.dispose();
+    this.editor = null;
+    this.editorModel?.dispose();
+    this.editorModel = null;
   }
 }

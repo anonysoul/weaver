@@ -26,6 +26,7 @@ class ProviderApplicationService(
     private val azureDevOpsClient: AzureDevOpsClient,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
+    private val defaultGitConfig = "[credential]\n        helper = store\n"
 
     fun list(): List<ProviderResponse> = providerRepository.findAll().map { it.toResponse() }
 
@@ -33,6 +34,7 @@ class ProviderApplicationService(
     fun create(request: ProviderRequest): ProviderResponse {
         val now = Instant.now()
         val providerType = request.type
+        val gitConfig = resolveGitConfig(request.gitConfig, null)
         val provider =
             Provider(
                 id = null,
@@ -40,6 +42,7 @@ class ProviderApplicationService(
                 baseUrl = request.baseUrl.trim(),
                 type = providerType,
                 encryptedToken = tokenCipher.encrypt(request.token.trim()),
+                gitConfig = gitConfig,
                 createdAt = now,
                 updatedAt = now,
             )
@@ -55,11 +58,13 @@ class ProviderApplicationService(
     ): ProviderResponse {
         val provider = providerRepository.findById(id) ?: throw EntityNotFoundException("Provider not found")
         val providerType = request.type
+        val gitConfig = resolveGitConfig(request.gitConfig, provider.gitConfig)
         val updated =
             provider.withUpdatedValues(
                 name = request.name.trim(),
                 baseUrl = request.baseUrl.trim(),
                 encryptedToken = tokenCipher.encrypt(request.token.trim()),
+                gitConfig = gitConfig,
                 updatedAt = Instant.now(),
             )
         val saved = providerRepository.save(updated.copy(type = providerType))
@@ -146,7 +151,16 @@ class ProviderApplicationService(
             name = name,
             baseUrl = baseUrl,
             type = type,
+            gitConfig = resolveGitConfig(gitConfig, null),
         )
+
+    private fun resolveGitConfig(
+        gitConfig: String?,
+        fallback: String?,
+    ): String {
+        val trimmed = gitConfig?.trimEnd()?.ifBlank { null }
+        return trimmed ?: fallback?.ifBlank { null } ?: defaultGitConfig
+    }
 
     private fun azureRepoId(id: String): Long =
         try {

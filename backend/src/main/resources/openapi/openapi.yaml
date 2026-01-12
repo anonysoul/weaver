@@ -410,6 +410,8 @@ components:
           type: string
         token:
           type: string
+        gitConfig:
+          type: string
         type:
           $ref: "#/components/schemas/ProviderType"
     ProviderResponse:
@@ -419,6 +421,7 @@ components:
         - name
         - baseUrl
         - type
+        - gitConfig
       properties:
         id:
           type: integer
@@ -429,6 +432,8 @@ components:
           type: string
         type:
           $ref: "#/components/schemas/ProviderType"
+        gitConfig:
+          type: string
     GitLabRepoResponse:
       type: object
       required:

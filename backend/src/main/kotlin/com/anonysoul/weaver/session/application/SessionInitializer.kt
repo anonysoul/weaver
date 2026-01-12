@@ -28,6 +28,7 @@ class SessionInitializer(
     private val vscodeProperties: VscodeProperties,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
+    private val defaultGitConfig = "[credential]\n        helper = store\n"
 
     @Async("sessionInitializerExecutor")
     @Transactional
@@ -65,6 +66,19 @@ class SessionInitializer(
                     sessionRepository.save(updated)
                     appendLog(sessionId, errorMessage.trim())
                     logger.warn("Workspace preparation failed for sessionId={}", sessionId)
+                    sessionContainerManager.stopContainer(sessionId)
+                    return@withLock
+                }
+
+                appendLog(sessionId, "Writing gitconfig into container.")
+                val gitConfigContent = provider.gitConfig.ifBlank { defaultGitConfig }
+                val gitConfigResult = sessionContainerManager.writeGitConfig(containerName, gitConfigContent)
+                if (gitConfigResult.exitCode != 0) {
+                    val errorMessage = gitConfigResult.stderr.ifBlank { "Gitconfig write failed" }
+                    val updated = session.withStatus(SessionState.FAILED, Instant.now(), "Gitconfig write failed")
+                    sessionRepository.save(updated)
+                    appendLog(sessionId, errorMessage.trim())
+                    logger.warn("Gitconfig write failed for sessionId={}", sessionId)
                     sessionContainerManager.stopContainer(sessionId)
                     return@withLock
                 }

@@ -23,6 +23,8 @@ class ProviderJpaEntity(
     var type: ProviderType,
     @Column(name = "encrypted_token", nullable = false, length = 4096)
     var encryptedToken: String,
+    @Column(name = "git_config", length = 16384)
+    var gitConfig: String? = null,
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant = Instant.now(),
     @Column(name = "updated_at", nullable = false)

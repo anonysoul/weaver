@@ -215,3 +215,27 @@ Weaver 是一个面向 AI 编码场景的 Git 仓库与会话管理平台，目�
 - 明确主项目 Docker 交付流程与镜像命名规范
 - 明确 Codex 镜像交付流程与镜像命名规范
 - 构建脚本或文档中固定交付镜像 tag 为 `latest`
+
+---
+
+## Milestone 8：平台 Git 配置与编辑器集成
+
+### 目标
+- 支持为每个接入平台配置 `.gitconfig` 文档
+- 在 Web UI 中集成 `monaco-editor` 编辑 `.gitconfig`
+- 会话创建后将平台对应的 `.gitconfig` 写入容器
+
+### 验收标准
+- Web UI 可编辑并保存平台级 `.gitconfig` 内容
+- `.gitconfig` 默认模板包含以下内容：
+  ```
+  [credential]
+          helper = store
+  ```
+- 创建会话时，后端根据所选平台将对应 `.gitconfig` 写入容器工作目录
+
+### 主要任务
+- 平台配置模型扩展：增加 `.gitconfig` 文档字段
+- 平台配置接口更新：支持 `.gitconfig` 读写
+- 前端平台配置页集成 `monaco-editor`（`ini` 语法高亮）
+- 会话初始化流程中写入 `.gitconfig` 文件

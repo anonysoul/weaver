@@ -203,16 +203,10 @@
 <p-dialog
   header="会话上下文"
   [visible]="contextVisible()"
-  (visibleChange)="contextVisible.set($event)"
+  (visibleChange)="onContextVisibleChange($event)"
   [modal]="true"
   [draggable]="false"
   [style]="{ width: '720px' }"
 >
-  <textarea
-    pInputTextarea
-    [autoResize]="true"
-    class="context-area"
-    [value]="contextPayload()"
-    readonly
-  ></textarea>
+  <div class="context-area" #contextEditor></div>
 </p-dialog>

@@ -1,12 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   EventEmitter,
   Input,
   Output,
+  ViewChild,
   inject,
   signal,
 } from '@angular/core';
@@ -19,9 +22,10 @@ import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { TextareaModule } from 'primeng/textarea';
 import { ToolbarModule } from 'primeng/toolbar';
 import { EMPTY, Subscription, catchError, finalize, switchMap, timer } from 'rxjs';
+import loader from '@monaco-editor/loader';
+import type * as Monaco from 'monaco-editor';
 
 import { SessionsService } from '../../core/openapi/api/sessions.service';
 import { GitLabRepoResponse } from '../../core/openapi/model/git-lab-repo-response';
@@ -48,16 +52,16 @@ import { ReposPanelComponent } from '../repos-panel/repos-panel.component';
     SelectModule,
     TagModule,
     ToolbarModule,
-    TextareaModule,
     ReposPanelComponent,
   ],
   templateUrl: './sessions-panel.component.html',
   styleUrl: './sessions-panel.component.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SessionsPanelComponent {
+export class SessionsPanelComponent implements AfterViewInit {
   @Input() providers: ProviderResponse[] = [];
   @Output() sessionsUpdated = new EventEmitter<SessionResponse[]>();
+  @ViewChild('contextEditor') contextEditor?: ElementRef<HTMLDivElement>;
 
   sessions = signal<SessionResponse[]>([]);
   loading = signal(false);
@@ -79,6 +83,8 @@ export class SessionsPanelComponent {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
   private refreshSubscription: Subscription | null = null;
+  private contextEditorInstance: Monaco.editor.IStandaloneCodeEditor | null = null;
+  private contextModel: Monaco.editor.ITextModel | null = null;
 
   readonly SessionStatus = SessionStatus;
   private readonly refreshIntervalMs = 3000;
@@ -89,7 +95,12 @@ export class SessionsPanelComponent {
     this.destroyRef.onDestroy(() => {
       this.refreshSubscription?.unsubscribe();
       this.refreshSubscription = null;
+      this.disposeContextEditor();
     });
+  }
+
+  ngAfterViewInit(): void {
+    loader.config({ paths: { vs: 'assets/monaco/vs' } });
   }
 
   loadSessions(): void {
@@ -244,7 +255,7 @@ export class SessionsPanelComponent {
       .subscribe({
         next: (context: SessionContextResponse) => {
           this.contextPayload.set(JSON.stringify(context, null, 2));
-          this.contextVisible.set(true);
+          this.onContextVisibleChange(true);
         },
         error: () => {
           this.messageService.add({
@@ -334,6 +345,15 @@ export class SessionsPanelComponent {
     }
   }
 
+  onContextVisibleChange(visible: boolean): void {
+    this.contextVisible.set(visible);
+    if (!visible) {
+      this.disposeContextEditor();
+      return;
+    }
+    this.queueContextEditorInit();
+  }
+
   private resolveVscodeUrl(rawUrl: string): string {
     let resolvedUrl: URL;
     try {
@@ -367,5 +387,44 @@ export class SessionsPanelComponent {
           this.sessionsUpdated.emit(sessions);
         },
       });
+  }
+
+  private queueContextEditorInit(): void {
+    setTimeout(() => {
+      void this.initContextEditor();
+    }, 0);
+  }
+
+  private async initContextEditor(): Promise<void> {
+    const host = this.contextEditor?.nativeElement;
+    if (!host) {
+      return;
+    }
+    const monaco = await loader.init();
+    if (!this.contextModel) {
+      this.contextModel = monaco.editor.createModel(this.contextPayload(), 'json');
+    } else {
+      this.contextModel.setValue(this.contextPayload());
+    }
+    if (this.contextEditorInstance) {
+      this.contextEditorInstance.dispose();
+    }
+    this.contextEditorInstance = monaco.editor.create(host, {
+      model: this.contextModel,
+      theme: 'vs-dark',
+      automaticLayout: true,
+      readOnly: true,
+      scrollBeyondLastLine: false,
+      minimap: { enabled: false },
+      fontSize: 13,
+      wordWrap: 'on',
+    });
+  }
+
+  private disposeContextEditor(): void {
+    this.contextEditorInstance?.dispose();
+    this.contextEditorInstance = null;
+    this.contextModel?.dispose();
+    this.contextModel = null;
   }
 }

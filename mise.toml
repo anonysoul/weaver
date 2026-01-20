@@ -1,0 +1,17 @@
+[tools]
+java = "21"
+node = "lts/jod"
+
+[tasks.format]
+alias = "f"
+run = [
+  "cd backend && ./gradlew spotlessApply",
+  "cd frontend && npm run format",
+]
+
+[tasks.openapi-generate]
+alias = "og"
+run = [
+  "cd backend && ./gradlew openApiGenerate",
+  "cd frontend && npm run openapi-generate",
+]

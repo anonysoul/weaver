@@ -88,6 +88,5 @@ class SessionsApiImpl(
         )
     }
 
-    override fun startSessionContainer(id: Long): ResponseEntity<SessionResponse> =
-        ResponseEntity.ok(runtimeService.startContainer(id))
+    override fun startSessionContainer(id: Long): ResponseEntity<SessionResponse> = ResponseEntity.ok(runtimeService.startContainer(id))
 }

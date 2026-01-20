@@ -1,9 +1,9 @@
 package com.anonysoul.weaver.session.application
 
+import com.anonysoul.weaver.provider.SessionResponse
 import com.anonysoul.weaver.provider.application.ProviderAuthSupport
 import com.anonysoul.weaver.provider.application.port.TokenCipher
 import com.anonysoul.weaver.provider.domain.ProviderRepository
-import com.anonysoul.weaver.provider.SessionResponse
 import com.anonysoul.weaver.session.domain.SessionLog
 import com.anonysoul.weaver.session.domain.SessionLogRepository
 import com.anonysoul.weaver.session.domain.SessionRepository

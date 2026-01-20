@@ -159,8 +159,7 @@ class SessionContainerManager(
                 val sessionId = parts[0].trim().toLongOrNull() ?: return@mapNotNull null
                 val state = parseContainerState(parts[1])
                 sessionId to state
-            }
-            .toMap()
+            }.toMap()
     }
 
     fun resolveContainerState(sessionId: Long): ContainerState? {
@@ -346,8 +345,8 @@ class SessionContainerManager(
         return null
     }
 
-    private fun isPortAvailable(port: Int): Boolean {
-        return try {
+    private fun isPortAvailable(port: Int): Boolean =
+        try {
             ServerSocket().use { socket ->
                 socket.reuseAddress = true
                 socket.bind(InetSocketAddress("0.0.0.0", port))
@@ -356,7 +355,6 @@ class SessionContainerManager(
         } catch (_: Exception) {
             false
         }
-    }
 
     private fun parseDockerPort(output: String): Int? {
         val lines = output.lines().map { it.trim() }.filter { it.isNotBlank() }
